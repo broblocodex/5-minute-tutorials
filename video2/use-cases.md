@@ -6,19 +6,19 @@ Time to steal some ideas. You've got a pad that launches players — now let's t
 
 ---
 
-## 1) Spawn area chaos control
+## 1) Spawn area fun zone
 
-**The idea:** Put jump pads in your spawn area for fun, but use cooldown to prevent new players from getting launched 5 times in one step and rage-quitting.
+**The idea:** Put jump pads around your spawn area to give players something fun to do while waiting for games to start or friends to join.
 
-**Why cooldown matters:** Without it, stepping on the pad triggers from legs, arms, torso separately - players get launched way too high and it feels broken instead of fun.
+**Why it works:** Creates a lively, energetic atmosphere. Players naturally gravitate toward bouncing around, and it makes your lobby feel alive and welcoming.
 
 **Setup:**
-1. Use Step 01 (`steps/01-cooldown.lua`) - this is essential here
-2. Place pads around spawn benches or waiting areas
-3. Set `LAUNCH_FORCE` gentle (25-35) and `COOLDOWN` to 0.8s
-4. Players get one smooth launch per step, not a chaotic multi-bounce
+1. Use Step 01 (`steps/01-cooldown.lua`) - prevents the multi-launch spam issue
+2. Place 3-5 pads around benches, waiting areas, or open spaces
+3. Keep `LAUNCH_FORCE` moderate (35-45) - fun but not overwhelming
+4. Space them out so players don't accidentally chain-bounce
 
-**Test it:** Try the basic script first - you'll see players getting launched multiple times per step. Then switch to Step 01 and feel the difference.
+**More ideas:** Different colored pads for different launch heights.
 
 ---
 
