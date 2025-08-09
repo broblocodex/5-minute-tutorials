@@ -2,7 +2,7 @@
 -- What: store `LastUserId` attribute pointing to the last player who changed the color.
 -- Why: used by the Boost Pad use‑case to boost only the last tapper.
 
-local Players = game:GetService("Players")
+local Players = game:GetService("Players")  -- Need this to identify players
 
 local part = script.Parent
 assert(part and part:IsA("BasePart"), "Place this script inside a Part")
@@ -11,18 +11,19 @@ local COLORS = {
     BrickColor.new("Bright red"),
     BrickColor.new("Bright blue"),
     BrickColor.new("Bright green"),
+    BrickColor.new("Bright yellow")
 }
 
 local colorIndex = 1
 part.BrickColor = COLORS[colorIndex]
 part:SetAttribute("ColorIndex", colorIndex)
 
-local function cycle(instigator)
+local function cycle(instigator)  -- Takes a player parameter
     colorIndex += 1
     if colorIndex > #COLORS then colorIndex = 1 end
     part.BrickColor = COLORS[colorIndex]
     part:SetAttribute("ColorIndex", colorIndex)
-    if instigator then
+    if instigator then  -- Track who caused this change
         part:SetAttribute("LastUserId", instigator.UserId)
     end
 end
@@ -39,15 +40,15 @@ part.Touched:Connect(function(hit)
     if now - lastTouchTime < GAP then return end
     lastTouchTime = now
 
-    local player = Players:GetPlayerFromCharacter(character)
-    cycle(player)
+    local player = Players:GetPlayerFromCharacter(character)  -- Get player from character
+    cycle(player)  -- Pass player to cycle function
 end)
 
 local clickDetector = Instance.new("ClickDetector")
 clickDetector.MaxActivationDistance = 24
 clickDetector.Parent = part
-clickDetector.MouseClick:Connect(function(player)
-    cycle(player)
+clickDetector.MouseClick:Connect(function(player)  -- Click events already give us player
+    cycle(player)  -- Pass player to cycle function
 end)
 
 

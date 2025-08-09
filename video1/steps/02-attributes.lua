@@ -9,17 +9,18 @@ local COLORS = {
     BrickColor.new("Bright red"),
     BrickColor.new("Bright blue"),
     BrickColor.new("Bright green"),
+    BrickColor.new("Bright yellow")
 }
 
 local colorIndex = 1
 part.BrickColor = COLORS[colorIndex]
-part:SetAttribute("ColorIndex", colorIndex)
+part:SetAttribute("ColorIndex", colorIndex)  -- Expose state to other scripts
 
 local function cycle()
     colorIndex += 1
     if colorIndex > #COLORS then colorIndex = 1 end
     part.BrickColor = COLORS[colorIndex]
-    part:SetAttribute("ColorIndex", colorIndex)
+    part:SetAttribute("ColorIndex", colorIndex)  -- Update attribute on every change
 end
 
 local lastTouchTime = 0

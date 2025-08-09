@@ -1,167 +1,206 @@
-# Use Cases (in‑game inspiration)
+# Real-World examples
 
-Short, fun, and punchy. Each idea lists the required step of the main script.
-- Step 02 publishes `ColorIndex`
-- Step 03 publishes `LastUserId`
-- Step 04 broadcasts `ColorChanged` RemoteEvent
+Time to steal some ideas. You've got a block that changes colors — now let's turn it into features players actually care about.
 
-Note
-- Each use case should live in its own Script. Don’t mix snippets. Place the Script exactly where the Setup says, and keep the top-of-snippet variables as shown so references resolve (e.g., `part = script.Parent`).
+**Important:** Each snippet goes in its own Script. Don't try to mash them together.
 
 ---
 
-## 1) Secret portal (color code to open)
-- Where: hub world door, hidden room, event gate.
-- Goal: set the block to the right color to reveal a portal Part.
+## 1) Secret Portal (Color Code Lock)
 
-Setup
-1) Use Step 02 (`steps/02-attributes.lua`) and set your target color index (e.g., 4 = yellow). Any later step also works.
-2) Put a portal Part with CanCollide=false and Transparency=1; toggle when solved.
-3) Put both the block and the portal under one Model; add a Script under the block. Name the portal sibling "Portal" (snippet expects it).
+**The idea:** Players need to set the block to a specific color to unlock a hidden door or portal. Think escape rooms, puzzle games, or hidden areas.
 
-Snippet
+**Why it's cool:** Everyone loves secrets. Plus, you can chain multiple blocks for complex codes.
+
+**Setup:**
+1. Use Step 02 (`steps/02-attributes.lua`) or later
+2. Set your target color (like color #4 for yellow)
+3. Add a portal Part with `CanCollide=false` and `Transparency=1`
+4. Put both under one Model, add this Script to the color block
+
 ```lua
 local part = script.Parent
 local portal = part.Parent:WaitForChild("Portal")
 
-local TARGET = 4 -- yellow in the default palette
+local TARGET_COLOR = 4 -- Change this to whatever color unlocks the portal
+
 part:GetAttributeChangedSignal("ColorIndex"):Connect(function()
-    if part:GetAttribute("ColorIndex") == TARGET then
+    local currentColor = part:GetAttribute("ColorIndex")
+    
+    if currentColor == TARGET_COLOR then
+        -- Portal appears!
         portal.CanCollide = true
         portal.Transparency = 0
+        print("Portal activated!") -- Nice for debugging
     else
+        -- Portal hidden
         portal.CanCollide = false
         portal.Transparency = 1
     end
 end)
 ```
 
+**More ideas:** Use 3-4 blocks with different target colors for a proper code sequence.
+
 ---
 
-## 2) Time‑trial boost pad (tap to arm it)
-- Where: racetrack start, obby checkpoint.
-- Goal: the last player who tapped the block gets a 3‑second speed boost when they step on the nearby pad.
+## 2) Speed boost pad
 
-Setup
-1) Use Step 03 (`steps/03-last-user-id.lua`) so the block writes `LastUserId`. Step 04 also works.
-2) Place a BoostPad part; on Touched, check if the toucher is the last user.
-3) Put a Script inside the BoostPad Part. Place the tap block (the one running `script.extended.lua`) as a sibling in the same parent and name it "TapBlock". The snippet uses `BoostPad.Parent:FindFirstChild("TapBlock")` to reference it; if not found, it falls back to `BoostPad`.
+**The idea:** The last player who touched the color block gets a speed boost when they step on a nearby boost pad. Perfect for racing games or competitive elements.
 
-Snippet
+**Why it's brilliant:** Creates interesting player interactions. "Quick, touch the block before someone else does!"
+
+**Setup:**
+1. Use Step 03 (`steps/03-last-user-id.lua`) on your color block
+2. Create a separate BoostPad Part  
+3. Put this Script inside the BoostPad Part
+4. Make sure the color block is a sibling named "ColorBlock"
+
 ```lua
-local BoostPad = script.Parent
-local part = (BoostPad.Parent and BoostPad.Parent:FindFirstChild("TapBlock")) or BoostPad -- sibling named "TapBlock"
+local boostPad = script.Parent
+local colorBlock = boostPad.Parent and boostPad.Parent:FindFirstChild("ColorBlock") or boostPad
 
-local BOOST, DURATION = 8, 3
-local active = {} -- hum -> { original: number, expire: number }
+local SPEED_BOOST = 8  -- How much faster they go
+local BOOST_DURATION = 3  -- How long it lasts
+local activeBoosters = {}  -- Keep track of who's currently boosted
 
-BoostPad.Touched:Connect(function(hit)
-    local hum = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
-    if not hum then return end
+boostPad.Touched:Connect(function(hit)
+    -- Get the player who stepped on the pad
+    local humanoid = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
     local player = game.Players:GetPlayerFromCharacter(hit.Parent)
     if not player then return end
-    if part:GetAttribute("LastUserId") ~= player.UserId then return end
-
-    local now = os.clock()
-    local st = active[hum]
-    if st then
-        -- Already boosted; just refresh the expiry so it cleanly extends.
-        st.expire = now + DURATION
+    
+    -- Check if this player was the last one to touch the color block
+    local lastUserId = colorBlock:GetAttribute("LastUserId")
+    if lastUserId ~= player.UserId then return end
+    
+    -- Prevent double-boosting
+    if activeBoosters[humanoid] then
+        activeBoosters[humanoid].expire = os.clock() + BOOST_DURATION
         return
     end
-
-    active[hum] = { original = hum.WalkSpeed, expire = now + DURATION }
-    hum.WalkSpeed += BOOST
-
+    
+    -- Apply the boost!
+    local originalSpeed = humanoid.WalkSpeed
+    activeBoosters[humanoid] = {
+        original = originalSpeed,
+        expire = os.clock() + BOOST_DURATION
+    }
+    
+    humanoid.WalkSpeed = originalSpeed + SPEED_BOOST
+    print(player.Name .. " got a speed boost!")
+    
+    -- Remove boost after duration
     task.spawn(function()
-        while active[hum] and os.clock() < active[hum].expire do
+        while activeBoosters[humanoid] and os.clock() < activeBoosters[humanoid].expire do
             task.wait(0.1)
         end
-        if not active[hum] then return end
-        local original = active[hum].original
-        active[hum] = nil
-        if hum.Parent then
-            hum.WalkSpeed = original
+        
+        if activeBoosters[humanoid] and humanoid.Parent then
+            humanoid.WalkSpeed = activeBoosters[humanoid].original
+            activeBoosters[humanoid] = nil
         end
     end)
 end)
 ```
 
+**More ideas:** Place multiple boost pads around the area, but only one color block. Watch the chaos unfold.
+
 ---
 
-## 3) Lamp color sync (RemoteEvent‑driven)
-- Where: lobby pads, kiosks, decorative lights.
-- Goal: lamp color mirrors the block’s color whenever the block changes, using the block’s `ColorChanged` RemoteEvent.
+## 3) Synchronized lamps
 
-Setup
-1) Use Step 04 (`steps/04-remoteevent.lua`) on the color block. Ensure there is a `RemoteEvent` named `ColorChanged` under the block.
-2) Create a lamp Part.
-3) Put a LocalScript in `StarterPlayerScripts`. Rename objects or update variables below: the lamp Part (e.g., "Lamp") and ensure the color block is a sibling named "Part".
+**The idea:** Every time someone changes the color block, all lamps in the area change to match. Great for ambient lighting or visual feedback systems.
 
-Snippet
+**Why it works:** Players love immediate visual feedback. It makes the world feel alive and responsive.
+
+**Setup:**
+1. Use Step 04 (`steps/04-remoteevent.lua`) on your color block
+2. Create lamp Parts wherever you want them (name Lamp)
+3. Put this LocalScript in `StarterPlayerScripts`
+
 ```lua
--- Edit these lines to match your setup
+-- This runs on each player's computer, so everyone sees the same effect
 local lamp = workspace:WaitForChild("Lamp")
-local block = lamp.Parent:FindFirstChild("Part") or lamp -- sibling named "Part"
+local colorBlock = workspace:WaitForChild("ColorBlock")
 
-local remote = block:WaitForChild("ColorChanged")
+local colorChangedEvent = colorBlock:WaitForChild("ColorChanged")
 
-local function apply()
-    lamp.Color = block.Color
+-- Function to sync the lamp color with the block
+local function syncLampColor()
+    lamp.Color = colorBlock.Color
+    -- Bonus: add some sparkle effects here if you want
 end
 
-remote.OnClientEvent:Connect(function(thePart, _colorIndex)
-    if thePart ~= block then return end
-    apply()
+-- Listen for color changes from the server
+colorChangedEvent.OnClientEvent:Connect(function(changedPart, colorIndex)
+    if changedPart == colorBlock then
+        syncLampColor()
+    end
 end)
 
--- Initialize on join
-apply()
+-- Sync on first join
+syncLampColor()
 ```
-
 ---
 
-## 4) Claimable nameplate lamp (owner display via RemoteEvent)
-- Where: lobby pads, base claim spots, kiosks.
-- Goal: when a player taps the block, the lamp shows the owner’s display name (from `LastUserId`), updating when the block changes via `ColorChanged`.
+## 4) Ownership display
 
-Setup
-1) Use Step 04 (`steps/04-remoteevent.lua`) on the color block. It writes `LastUserId` (from Step 03) and broadcasts changes via `ColorChanged`. Ensure there is a `RemoteEvent` named `ColorChanged` under the block.
-2) Add a `BillboardGui` with a `TextLabel` to the lamp Part.
-3) Put a LocalScript in `StarterPlayerScripts`. Rename objects or update variables below: the lamp Part (e.g., "Lamp") and ensure the color block is a sibling named "Part".
+**The idea:** When players touch the block, their name appears on a nearby display. Last toucher "owns" the block until someone else takes it.
 
-Snippet
+**Perfect for:** Territory control, base claiming, leaderboard systems.
+
+**Setup:**
+1. Use Step 04 (`steps/04-remoteevent.lua`) on your color block
+2. Create a detached Attachment (place it anywhere in 3D space). (if it's still in Beta, make sure it's enabled in studio)
+3. Add a BillboardGui as a child of the Attachment with a TextLabel
+4. Put this LocalScript inside the BillboardGui
+5. Make sure the ColorBlock is accessible (adjust the path as needed)
+
 ```lua
 local Players = game:GetService("Players")
 
--- Edit these lines to match your setup
-local lamp = workspace:WaitForChild("Lamp")
-local block = lamp.Parent:FindFirstChild("Part") or lamp -- sibling named "Part"
+local billboardGui = script.Parent
+local textLabel = billboardGui:WaitForChild("TextLabel")
 
-local textLabel = lamp:WaitForChild("BillboardGui"):WaitForChild("TextLabel")
-local remote = block:WaitForChild("ColorChanged")
+-- Find the ColorBlock (adjust path as needed for your setup)
+local colorBlock = workspace:WaitForChild("ColorBlock")
+local colorChangedEvent = colorBlock:WaitForChild("ColorChanged")
 
-local function apply()
-    local uid = block:GetAttribute("LastUserId")
-    local name = "Unclaimed"
-    if uid then
-        local plr = Players:GetPlayerByUserId(uid)
-        if plr then name = plr.DisplayName end
+-- Update the display with current owner
+local function updateOwnerDisplay()
+    local lastUserId = colorBlock:GetAttribute("LastUserId")
+    
+    if lastUserId then
+        -- Try to get the player's current display name
+        local player = Players:GetPlayerByUserId(lastUserId)
+        if player then
+            textLabel.Text = "Owned by " .. player.DisplayName
+            textLabel.TextColor3 = Color3.new(0, 1, 0)  -- Green for active
+        else
+            textLabel.Text = "Owned by [Player Left]"
+            textLabel.TextColor3 = Color3.new(1, 1, 0)  -- Yellow for offline
+        end
+    else
+        textLabel.Text = "Unclaimed"
+        textLabel.TextColor3 = Color3.new(0.7, 0.7, 0.7)  -- Gray for unclaimed
     end
-    textLabel.Text = name
 end
 
-remote.OnClientEvent:Connect(function(thePart, _colorIndex)
-    if thePart ~= block then return end
-    apply()
+-- Listen for ownership changes
+colorChangedEvent.OnClientEvent:Connect(function(changedPart, colorIndex)
+    if changedPart == colorBlock then
+        updateOwnerDisplay()
+    end
 end)
 
--- Initialize on join
-apply()
+-- Set initial display
+updateOwnerDisplay()
 ```
 
 ---
 
-Tips
-- Use 3–4 strong colors for clarity.
-- Attributes (`ColorIndex`, `LastUserId`) make it easy to wire logic without editing the base scripts.
+
+The beauty of this system is its simplicity. Master these patterns, and you can build almost any interactive system your game needs.

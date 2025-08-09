@@ -14,7 +14,7 @@ local COLORS = {
     BrickColor.new("Bright yellow"),
 }
 
-local remote = part:FindFirstChild("ColorChanged")
+local remote = part:FindFirstChild("ColorChanged")  -- Look for optional RemoteEvent
 
 local colorIndex = 1
 part.BrickColor = COLORS[colorIndex]
@@ -28,7 +28,7 @@ local function cycle(instigator)
     if instigator then
         part:SetAttribute("LastUserId", instigator.UserId)
     end
-    if remote then
+    if remote then  -- Broadcast to all clients when color changes
         remote:FireAllClients(part, colorIndex)
     end
 end
