@@ -12,8 +12,9 @@ Tutorials
 - [4. Spinning Platform](video4/) — tween loops
 
 Each folder includes
-- script.lua (simple), script.extended.lua (tunable + events)
-- readme.md (1‑minute tutorial), wiki.md (key APIs), use-cases.md (4 ideas)
+- script.lua (complete working code)
+- readme.md (quick tutorial), wiki.md (key APIs), use-cases.md
+- steps/ folder (code broken into stages)
 
 Quick start
 1) Pick a folder above.
