@@ -1,14 +1,15 @@
 ## Roblox Short Mechanics
-Seven tiny mechanics. Open → copy → paste → tweak.
+Four tiny mechanics. Open → copy → paste → tweak.
+
+## How to follow along
+
+These aren't full-blown tutorials - they're more like quick recipes. Each one takes maybe 5 minutes to get working, then you can mess around with the values to see what breaks (or what gets cooler).
 
 Tutorials
 - [1. Chameleon Block](video1/) — events + state
 - [2. Jump Pad](video2/) — physics impulse
 - [3. Teleporter](video3/) — CFrame placement
 - [4. Spinning Platform](video4/) — tween loops
-- [5. Disappearing Bridge](video5/) — tween + timing
-- [6. Speed Boost Strip](video6/) — temporary stat change
-- [7. Coin Collector](video7/) — collection + feedback
 
 Each folder includes
 - script.lua (simple), script.extended.lua (tunable + events)
