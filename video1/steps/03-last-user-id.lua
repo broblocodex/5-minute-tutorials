@@ -11,7 +11,7 @@ local COLORS = {
     BrickColor.new("Bright red"),
     BrickColor.new("Bright blue"),
     BrickColor.new("Bright green"),
-    BrickColor.new("Bright yellow")
+    BrickColor.new("Bright yellow"),
 }
 
 local colorIndex = 1
@@ -44,6 +44,8 @@ part.Touched:Connect(function(hit)
         return
     end
     
+    lastTouchTime = now
+
     local player = Players:GetPlayerFromCharacter(character)  -- Get player from character
     cycleColor(player)  -- Pass player to cycle function
 end)

@@ -1,4 +1,4 @@
--- Step 01 — Stop the Touch Spam
+-- Step 01 - Stop the Touch Spam
 -- Problem: BasePart.Touched fires multiple times per contact (seriously, like 5-10 times)
 -- Solution: Add a tiny cooldown so we only react once per actual touch
 

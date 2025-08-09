@@ -14,13 +14,12 @@ Time to steal some ideas. You've got a block that changes colors — now let's t
 
 **Setup:**
 1. Use Step 02 (`steps/02-attributes.lua`) or later
-2. Set your target color (like color #4 for yellow)
-3. Add a portal Part with `CanCollide=false` and `Transparency=1`
-4. Put both under one Model, add this Script to the color block
+2. Add a portal Part(name "Portal") with `CanCollide=false` and `Transparency=1`
+3. Put both under one Model, add this Script to the portal block
 
 ```lua
-local part = script.Parent
-local portal = part.Parent:WaitForChild("Portal")
+local portal = script.Parent
+local part = portal.Parent:WaitForChild("ColorBlock")
 
 local TARGET_COLOR = 4 -- Change this to whatever color unlocks the portal
 
@@ -106,7 +105,7 @@ boostPad.Touched:Connect(function(hit)
 end)
 ```
 
-**More ideas:** Place multiple boost pads around the area, but only one color block. Watch the chaos unfold.
+**More ideas:** Place multiple boost pads around the area, but only one color block.
 
 ---
 
@@ -118,27 +117,29 @@ end)
 
 **Setup:**
 1. Use Step 04 (`steps/04-remoteevent.lua`) on your color block
-2. Create lamp Parts wherever you want them (name Lamp)
-3. Put this LocalScript in `StarterPlayerScripts`
+2. Create a detached Attachment (name "LampAttachment") (place it anywhere in 3D space). (if it's still in Beta, make sure it's enabled in studio)
+3. Create a lamp Part as a child of LampAttachment (name "Lamp")
+4. Put this Script(RunContext=Local) inside the LampAttachment
+5. Make sure the ColorBlock is a sibling of LampAttachment
 
 ```lua
 -- This runs on each player's computer, so everyone sees the same effect
-local lamp = workspace:WaitForChild("Lamp")
-local colorBlock = workspace:WaitForChild("ColorBlock")
+local lamp = script.Parent:WaitForChild("Lamp")
+local colorBlock = script.Parent.Parent:WaitForChild("ColorBlock")
 
 local colorChangedEvent = colorBlock:WaitForChild("ColorChanged")
 
 -- Function to sync the lamp color with the block
 local function syncLampColor()
-    lamp.Color = colorBlock.Color
-    -- Bonus: add some sparkle effects here if you want
+	lamp.Color = colorBlock.Color
+	-- Bonus: add some sparkle effects here if you want
 end
 
 -- Listen for color changes from the server
 colorChangedEvent.OnClientEvent:Connect(function(changedPart, colorIndex)
-    if changedPart == colorBlock then
-        syncLampColor()
-    end
+	if changedPart == colorBlock then
+		syncLampColor()
+	end
 end)
 
 -- Sync on first join
