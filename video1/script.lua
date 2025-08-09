@@ -2,9 +2,9 @@
 -- Instructions: Drop this Script inside any Part. Touch or click to cycle colors.
 
 local part = script.Parent
-assert(part and part:IsA("BasePart"), "Hey! Put this script inside a Part, not floating around loose.")
+assert(part and part:IsA("BasePart"), "This script needs to live inside a Part, not floating around!")
 
--- Our color palette. Feel free to swap these out — just keep the BrickColor.new() format
+-- Our color palette. Feel free to swap these out - just keep the BrickColor.new() format
 local COLORS = {
     BrickColor.new("Bright red"),
     BrickColor.new("Bright blue"),
@@ -20,7 +20,7 @@ part.BrickColor = COLORS[colorIndex]
 local function cycleColor()
     colorIndex += 1
     if colorIndex > #COLORS then 
-        colorIndex = 1 
+        colorIndex = 1  -- Loop back to the beginning
     end
     part.BrickColor = COLORS[colorIndex]
 end

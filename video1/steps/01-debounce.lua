@@ -7,7 +7,7 @@ assert(part and part:IsA("BasePart"), "This script needs to live inside a Part, 
 
 local COLORS = {
     BrickColor.new("Bright red"),
-    BrickColor.new("Bright blue"), 
+    BrickColor.new("Bright blue"),
     BrickColor.new("Bright green"),
     BrickColor.new("Bright yellow"),
 }
@@ -18,7 +18,7 @@ part.BrickColor = COLORS[colorIndex]
 local function cycleColor()
     colorIndex += 1
     if colorIndex > #COLORS then 
-        colorIndex = 1  -- Loop back to the beginning
+        colorIndex = 1
     end
     part.BrickColor = COLORS[colorIndex]
 end
@@ -28,11 +28,10 @@ local lastTouchTime = 0
 local TOUCH_COOLDOWN = 0.15  -- 150ms between touches (adjust if needed)
 
 part.Touched:Connect(function(hit)
-    -- Same player detection as before
     local humanoid = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
     if not humanoid then return end
     
-    -- The new part: check if enough time has passed
+    -- Check if enough time has passed
     local now = os.clock()
     if now - lastTouchTime < TOUCH_COOLDOWN then 
         return  -- Too soon, ignore this touch
@@ -42,7 +41,6 @@ part.Touched:Connect(function(hit)
     cycleColor()
 end)
 
--- Click support (debounce not needed here since clicks are naturally slower)
 local clickDetector = Instance.new("ClickDetector")
 clickDetector.MaxActivationDistance = 24
 clickDetector.Parent = part
