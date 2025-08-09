@@ -1,51 +1,77 @@
-### Core Pieces (What You Actually Use)
+# The Essential Roblox stuff
 
-| Thing | Why You Touch It |
-|-------|------------------|
-| Players | Turn character model into Player object |
-| Debris | Cleanup BodyVelocity after a short delay |
-| BasePart.Touched | Fire when a player steps on the pad |
-| Humanoid/HumanoidRootPart | Validate real character and get the root part |
-| BodyVelocity | Apply instantaneous velocity |
-| Vector3 | Set velocity and MaxForce |
+Here's the bare minimum that matters for jump pads.
 
-### Minimal Patterns
+## Core Services & Objects
 
-Launch up:
+| Thing | What It Does | When You Need It |
+|-------|-------------|------------------|
+| `Players` | Connects character models to actual players | Getting player data for cooldowns and permissions |
+| `Debris` | Auto-deletes objects after a timer | Cleaning up BodyVelocity so physics don't get weird |
+| `BasePart.Touched` | Fires when something hits your part | The trigger for all jump pad interactions |
+| `Humanoid` | Proves something is a real character | Filtering out random parts and tools |
+| `HumanoidRootPart` | The physics center of a character | Where you attach forces to move players |
+| `BodyVelocity` | Applies instant velocity to objects | The actual launching mechanism |
+| `Vector3` | 3D direction and magnitude | Controlling launch direction and power |
+
+## Code patterns
+
+**Basic upward launch:**
 ```lua
-local bv = Instance.new("BodyVelocity")
-bv.MaxForce = Vector3.new(0, math.huge, 0)
-bv.Velocity = Vector3.new(0, power, 0)
-bv.Parent = root
-game:GetService("Debris"):AddItem(bv, 0.5)
+local function launchUp(humanoidRootPart, power)
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(0, math.huge, 0)  -- Only upward force
+    bodyVelocity.Velocity = Vector3.new(0, power, 0)      -- Straight up
+    bodyVelocity.Parent = humanoidRootPart
+    
+    -- Clean up automatically (prevents physics weirdness)
+    game:GetService("Debris"):AddItem(bodyVelocity, 0.5)
+end
 ```
 
-Launch forward:
+**Getting player from touch event:**
 ```lua
-local look = root.CFrame.LookVector
-local bv = Instance.new("BodyVelocity")
-bv.MaxForce = Vector3.new(4000, math.huge, 4000)
-bv.Velocity = look * power + Vector3.new(0, power * 0.6, 0)
-bv.Parent = root
-game:GetService("Debris"):AddItem(bv, 0.5)
+local function getPlayerFromHit(hit)
+    local humanoid = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return nil end
+    
+    local player = game:GetService("Players"):GetPlayerFromCharacter(hit.Parent)
+    local rootPart = hit.Parent:FindFirstChild("HumanoidRootPart")
+    
+    return player, rootPart
+end
+
+-- Usage:
+jumpPad.Touched:Connect(function(hit)
+    local player, rootPart = getPlayerFromHit(hit)
+    if not player or not rootPart then return end
+    
+    -- Launch the player
+    launchUp(rootPart, 50)
+end)
 ```
 
-Per‑player cooldown:
-```lua
-local last = {}
-local COOLDOWN = 0.8
-local uid = player.UserId
-local t, prev = os.clock(), last[uid]
-if prev and (t - prev) < COOLDOWN then return end
-last[uid] = t
-```
+## Common gotchas
 
-### Study Links (Roblox docs)
-- Players: https://create.roblox.com/docs/reference/engine/classes/Players
-- Debris: https://create.roblox.com/docs/reference/engine/classes/Debris
-- BasePart (Touched): https://create.roblox.com/docs/reference/engine/classes/BasePart#events
-- Humanoid: https://create.roblox.com/docs/reference/engine/classes/Humanoid
-- BodyVelocity: https://create.roblox.com/docs/reference/engine/classes/BodyVelocity
-- Vector3: https://create.roblox.com/docs/reference/engine/datatypes/Vector3
-- Attributes: https://create.roblox.com/docs/production/attributes
-- RemoteEvent: https://create.roblox.com/docs/reference/engine/classes/RemoteEvent
+**BodyVelocity sticks around forever**
+- Solution: Always use `Debris:AddItem()` to clean up after 0.5 seconds
+- Why: Leftover BodyVelocity objects cause weird physics behavior
+
+**Touch events fire multiple times**
+- Problem: One step can trigger 5+ touch events
+- Solution: Add a small debounce or use per-player cooldowns
+
+**Dead players can still trigger pads**
+- Always check `humanoid.Health > 0` before launching
+- Dead characters should not be launchable
+
+## The official docs
+
+These are the only Roblox documentation pages you'll actually need:
+
+- **Players Service**: https://create.roblox.com/docs/reference/engine/classes/Players
+- **Debris Service**: https://create.roblox.com/docs/reference/engine/classes/Debris
+- **BasePart Events**: https://create.roblox.com/docs/reference/engine/classes/BasePart#events
+- **Humanoid Class**: https://create.roblox.com/docs/reference/engine/classes/Humanoid
+- **BodyVelocity**: https://create.roblox.com/docs/reference/engine/classes/BodyVelocity
+- **Vector3 Math**: https://create.roblox.com/docs/reference/engine/datatypes/Vector3

@@ -1,50 +1,45 @@
--- Magic Jump Pad (simple)
--- How to use: put this Script inside a Part. Touch or click to launch characters upward.
+-- Magic Jump Pad (the simple version)
+-- Instructions: Drop this Script inside any Part. Step on it to get launched upward!
 
 local Players = game:GetService("Players")
 local Debris = game:GetService("Debris")
 
 local jumpPad = script.Parent
-assert(jumpPad and jumpPad:IsA("BasePart"), "Place this script inside a Part")
+assert(jumpPad and jumpPad:IsA("BasePart"), "Hey! Put this script inside a Part, not floating around loose.")
 
--- Tweak these numbers to taste
-local LAUNCH_FORCE = 50   -- upward speed added to the character
-local CLEANUP_TIME = 0.5  -- seconds to keep the BodyVelocity before cleaning up
+-- Tweak these numbers until it feels right for your game
+local LAUNCH_FORCE = 50   -- How much upward speed to add
+local CLEANUP_TIME = 0.5  -- How long the BodyVelocity lasts before cleanup
 
+-- Make it look like a jump pad (bright and glowy)
 jumpPad.BrickColor = BrickColor.new("Bright yellow")
 jumpPad.Material = Enum.Material.Neon
 
--- Apply a short BodyVelocity to the character's root to pop them up
+-- The magic: apply upward velocity to launched players
 local function launch(hit)
-    local hum = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
-    if not hum or hum.Health <= 0 then return end
-    local root = hum.Parent:FindFirstChild("HumanoidRootPart")
+    -- Filter out random junk — we only want real players
+    local humanoid = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return end
+    
+    local root = humanoid.Parent:FindFirstChild("HumanoidRootPart")
     if not root then return end
 
-    local bv = Instance.new("BodyVelocity")
-    bv.MaxForce = Vector3.new(0, math.huge, 0)
-    bv.Velocity = Vector3.new(0, LAUNCH_FORCE, 0)
-    bv.Parent = root
-    Debris:AddItem(bv, CLEANUP_TIME)
-
-    -- Quick color pulse as feedback
-    jumpPad.BrickColor = BrickColor.new("Lime green")
-    task.wait(0.1)
-    jumpPad.BrickColor = BrickColor.new("Bright yellow")
+    -- Create a BodyVelocity to shoot them upward
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(0, math.huge, 0)  -- Only apply upward force
+    bodyVelocity.Velocity = Vector3.new(0, LAUNCH_FORCE, 0)  -- Straight up
+    bodyVelocity.Parent = root
+    
+    -- Auto-cleanup after half a second (prevents weird physics)
+    Debris:AddItem(bodyVelocity, CLEANUP_TIME)
 end
 
-local touchedConn = jumpPad.Touched:Connect(launch)
+-- Listen for players stepping on the pad
+local touchConnection = jumpPad.Touched:Connect(launch)
 
+-- Clean up the connection if the pad gets deleted
 jumpPad.AncestryChanged:Connect(function(_, parent)
-    if parent == nil and touchedConn then touchedConn:Disconnect() end
-end)
-
--- Optional: click to self‑test the pad without stepping on it
-local clickDetector = Instance.new("ClickDetector")
-clickDetector.MaxActivationDistance = 24
-clickDetector.Parent = jumpPad
-clickDetector.MouseClick:Connect(function(player)
-    local char = player.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    if root then launch(root) end
+    if parent == nil and touchConnection then 
+        touchConnection:Disconnect() 
+    end
 end)

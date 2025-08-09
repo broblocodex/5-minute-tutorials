@@ -1,68 +1,60 @@
 -- Step 01 — Per-player cooldown (anti-spam)
--- What: add a per-player cooldown so one user can't trigger the pad repeatedly in a short time.
--- Why: reduces chaos in lobbies/spawn areas and keeps the launch feeling intentional.
+-- Problem: Players can spam the jump pad, causing chaos in lobbies and spawn areas
+-- Solution: Add a personal cooldown timer so each player can only launch once every 0.8 seconds
 
 local Players = game:GetService("Players")
 local Debris = game:GetService("Debris")
 
-local pad = script.Parent
-assert(pad and pad:IsA("BasePart"), "Place this script inside a Part")
+local jumpPad = script.Parent
+assert(jumpPad and jumpPad:IsA("BasePart"), "Hey! Put this script inside a Part, not floating around loose.")
 
-local POWER = 50
-local CLEANUP = 0.5
-local CLICK_RANGE = 24
-local COOLDOWN = 0.8 -- seconds per player
+local LAUNCH_FORCE = 50
+local CLEANUP_TIME = 0.5
+local COOLDOWN = 0.8      -- Seconds between launches per player (anti-spam)
 
-pad.BrickColor = BrickColor.new("Bright yellow")
-pad.Material = Enum.Material.Neon
+jumpPad.BrickColor = BrickColor.new("Bright yellow")
+jumpPad.Material = Enum.Material.Neon
 
-local lastLaunchAtByUserId = {}
+-- Track when each player last used the pad
+local lastLaunchTime = {}
 
+-- Check if this player can launch right now (cooldown logic)
 local function canLaunch(player)
     if not player then return false end
     local now = os.clock()
-    local prev = lastLaunchAtByUserId[player.UserId]
-    if prev and (now - prev) < COOLDOWN then return false end
-    lastLaunchAtByUserId[player.UserId] = now
+    local lastTime = lastLaunchTime[player.UserId]
+    if lastTime and (now - lastTime) < COOLDOWN then
+        return false
+    end
+    lastLaunchTime[player.UserId] = now
     return true
 end
 
-local function launchFor(player, root)
-    local bv = Instance.new("BodyVelocity")
-    bv.MaxForce = Vector3.new(0, math.huge, 0)
-    bv.Velocity = Vector3.new(0, POWER, 0)
-    bv.Parent = root
-    Debris:AddItem(bv, CLEANUP)
-
-    pad.BrickColor = BrickColor.new("Lime green")
-    task.delay(0.1, function()
-        if pad.Parent then pad.BrickColor = BrickColor.new("Bright yellow") end
-    end)
-end
-
-local function onTouched(hit)
-    local hum = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
-    if not hum or hum.Health <= 0 then return end
-    local player = Players:GetPlayerFromCharacter(hum.Parent)
+local function launch(hit)
+    local humanoid = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return end
+    
+    -- Get the player and check their cooldown
+    local player = Players:GetPlayerFromCharacter(humanoid.Parent)
     if not canLaunch(player) then return end
-    local root = hum.Parent:FindFirstChild("HumanoidRootPart")
+    
+    local root = humanoid.Parent:FindFirstChild("HumanoidRootPart")
     if not root then return end
-    launchFor(player, root)
+
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(0, math.huge, 0)
+    bodyVelocity.Velocity = Vector3.new(0, LAUNCH_FORCE, 0)
+    bodyVelocity.Parent = root
+    
+    Debris:AddItem(bodyVelocity, CLEANUP_TIME)
 end
 
-local touchedConn = pad.Touched:Connect(onTouched)
-pad.AncestryChanged:Connect(function(_, parent)
-    if parent == nil and touchedConn then touchedConn:Disconnect() end
-end)
+local touchConnection = jumpPad.Touched:Connect(launch)
 
-local clickDetector = Instance.new("ClickDetector")
-clickDetector.MaxActivationDistance = CLICK_RANGE
-clickDetector.Parent = pad
-clickDetector.MouseClick:Connect(function(player)
-    if not canLaunch(player) then return end
-    local char = player.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    if root then launchFor(player, root) end
+jumpPad.AncestryChanged:Connect(function(_, parent)
+    if parent == nil and touchConnection then 
+        touchConnection:Disconnect() 
+    end
 end)
 
 

@@ -1,77 +1,106 @@
-# Use cases — Teleporter
+# Real-World examples
 
-Four tiny ideas to spark integrations. Copy and tweak.
+Time to steal some ideas. You've got a teleporter that moves players — now let's turn it into features that make games memorable.
 
-Note
-- Each use case should live in its own Script (or LocalScript where called out). Don’t mix snippets. Place the script where the Setup/heading implies, and keep top-of-snippet variables clear (e.g., `local portal = script.Parent`).
+**Important:** Each snippet goes in its own Script. Don't try to mash them together — that way lies confusion and bugs.
 
-## 1) Fast‑travel hub
+---
 
-- Place 4 portals in a hub. Each portal’s Target points to a zone’s spawn pad.
-- Show the zone name with a SurfaceGui.
+## 1) Fast-travel hub
 
-Snippet: set the label from the destination Part name.
+**The idea:** Central hub with 4 portals, each taking you to a different zone. Perfect for RPGs, adventure games, or any world with multiple areas.
+
+**Why it works:** Players love feeling like they can zip around your world quickly. No more boring walking between zones.
+
+**Setup:**
+1. Use the basic `script.lua` in each portal
+2. Point each Target to a spawn pad in different zones  
+3. Add a SurfaceGui label showing where each portal goes
+
 ```lua
-local portal = script.Parent
-local target = script.Parent:FindFirstChild("Target")
-local label = script.Parent.SurfaceGui.TextLabel
-label.Text = target.Value and target.Value.Name or "?"
-```
-
-## 2) Key‑locked portal
-
-- Use Step 02 (gated‑access): only allow when the player has a key.
-```lua
--- Add near canUse(player)
-local function hasKey(player)
-    return player:GetAttribute("HasBlueKey") == true
-end
-
-local function canUse(player)
-    if not hasKey(player) then return false end
-    -- cooldown check (from Step 02)
-    local t = os.clock(); local prev = lastUseAtByUserId[player.UserId]
-    if prev and (t - prev) < COOLDOWN then return false end
-    lastUseAtByUserId[player.UserId] = t; return true
-end
-```
-
-## 3) Puzzle: rotate destinations
-
-- One portal cycles through 3 targets. Swap Target.Value on click.
-```lua
+-- Put this in each portal to auto-label the destination
 local portal = script.Parent
 local target = portal:FindFirstChild("Target")
-local choices = {workspace.A, workspace.B, workspace.C}
-local i = 1
-local click = Instance.new("ClickDetector", portal)
-click.MouseClick:Connect(function()
-    i = (i % #choices) + 1
-    target.Value = choices[i]
-    portal:SetAttribute("DestIndex", i)
+local label = portal.SurfaceGui.TextLabel
+
+-- Show the destination name
+label.Text = target.Value and target.Value.Name or "Unknown"
+```
+
+**More ideas:** Color-code each portal to match its destination zone.
+
+---
+
+## 2) Key-locked portal
+
+**The idea:** Portal only works if you have the right key. Great for progression systems and secret areas.
+
+**Why it's brilliant:** Creates natural game progression. Players feel rewarded when they finally unlock new areas.
+
+**Setup:**
+1. Use Step 02 (`steps/02-gated-access.lua`)
+2. Create a pickupable key Part somewhere in your world
+3. Check for the key before allowing teleportation
+
+```lua
+-- Put this Script inside a key Part to make it pickupable
+local Players = game:GetService("Players")
+
+local key = script.Parent
+key.Name = "BlueKey"
+key.BrickColor = BrickColor.new("Bright blue")
+key.Material = Enum.Material.Neon
+
+-- Pick up the key when touched
+key.Touched:Connect(function(hit)
+    local humanoid = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    local player = Players:GetPlayerFromCharacter(humanoid.Parent)
+    if not player then return end
+    
+    -- Give them the key and destroy it
+    player:SetAttribute("HasBlueKey", true)
+    key:Destroy()
 end)
 ```
 
-## 4) Party arrival VFX
+**More ideas:** Add a sound effect when the key is picked up, or change the portal color when unlocked.
 
-- Use Step 03 (remoteevent). Add a RemoteEvent named "Teleported" under the portal. On client, spawn a sparkle at arrival.
+---
+
+## 3) Rotating puzzle portal
+
+**The idea:** One portal that cycles between 3 different destinations when clicked. Players must figure out the pattern.
+
+**Why it's genius:** Adds puzzle elements to movement. Creates those "aha!" moments when players crack the rotation pattern.
+
+**Setup:**
+1. Use the basic `script.lua`
+2. Add destinations to workspace (A, B, C)
+3. Add this cycling logic
+
 ```lua
--- Client (LocalScript in StarterPlayerScripts)
-local rs = game:GetService("ReplicatedStorage")
-local function hook(part)
-    local ev = part:FindFirstChild("Teleported")
-    if ev then
-        ev.OnClientEvent:Connect(function(portal, player, dest)
-            if not dest or not dest.Position then return end
-            -- quick sparkle
-            local p = Instance.new("ParticleEmitter")
-            p.Rate = 200; p.Lifetime = NumberRange.new(0.3, 0.6)
-            p.Speed = NumberRange.new(4, 8)
-            p.Parent = dest
-            task.delay(0.25, function() p.Enabled = false; task.delay(0.5, function() p:Destroy() end) end)
-        end)
-    end
-end
-for _, portal in ipairs(workspace:GetDescendants()) do if portal:IsA("BasePart") then hook(portal) end end
-workspace.DescendantAdded:Connect(function(inst) if inst:IsA("BasePart") then hook(inst) end end)
+-- Put this in the portal to make it cycle destinations
+local portal = script.Parent
+local target = portal:FindFirstChild("Target")
+local destinations = {workspace.ZoneA, workspace.ZoneB, workspace.ZoneC}
+local currentIndex = 1
+
+local clickDetector = Instance.new("ClickDetector")
+clickDetector.Parent = portal
+
+clickDetector.MouseClick:Connect(function()
+    currentIndex = (currentIndex % #destinations) + 1
+    target.Value = destinations[currentIndex]
+    
+    -- Visual feedback showing current destination
+    portal.BrickColor = BrickColor.new({"Bright red", "Bright green", "Bright blue"}[currentIndex])
+end)
 ```
+
+**More ideas:** Add sound effects for each rotation to give players audio cues.
+
+---
+
+Good teleporters don't just move players — they make travel feel intentional and exciting. Hide them behind challenges, use them to reward exploration, or make them part of the puzzle itself.

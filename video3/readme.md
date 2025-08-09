@@ -1,30 +1,36 @@
-# Teleporter Portal — 5‑minute tutorial
+# 5‑Minute Tutorial: Instant Teleporter
 
-A portal Part that moves players to another Part instantly.
+Remember Pac-Man? Those tunnels that zap you from one side of the screen to the other? That's exactly what we're building. Step on a portal, instantly appear somewhere else.
 
-## Files in this tutorial
+Here's the thing: teleporters solve so many game design problems. Need to connect distant areas? Portal. Want to create puzzle mechanics? Portal with conditions. Building a hub world? Portals everywhere. This one pattern unlocks tons of possibilities.
 
-- [script.lua](script.lua) — simple, copy‑paste teleporter
-- [steps/](steps) — incremental checkpoints aligned to use-cases (01 → 03)
-- [wiki.md](wiki.md) — tiny study links you’ll actually use
-- [use-cases.md](use-cases.md) — 4 quick ideas to plug into your game
+## What you're actually building
+A Part that instantly moves players to another Part when touched. We start with basic teleportation, then add cooldowns and access controls.
 
-## Try it
+Think of it as cutting holes in space — but safer and with fewer physics violations.
 
-1) Make two Parts anywhere in Workspace (your two portals).
-2) In each portal Part, insert an ObjectValue named Target and set it to the other Part.
-3) Insert a Script inside each portal Part and paste `script.lua`.
-4) Play. Step on a portal to jump to its Target.
+## What's in here
+- [script.lua](./script.lua) — the dead simple version (start here)
+- [steps/](./steps) — each step adds one new concept (01→03)
+- [wiki.md](./wiki.md) — the Roblox docs that actually matter
+- [use-cases.md](./use-cases.md) — real examples you can steal
 
-## Then explore
+## Get it working (2 minutes)
+1. Drop two Parts in your workspace (these are your portals)
+2. In each portal, add an ObjectValue named "Target"
+3. Set each Target to point to the other portal
+4. Drop a Script in each portal and paste `script.lua`
+5. Hit Play, step on either portal
 
-- Walk through `steps/` in order:
-  - 01 cooldown → 02 gated-access → 03 remoteevent
+If you teleport between them, you've got it working. If you get stuck in the floor, adjust the height offset.
 
-## Which step for which use-case?
-- Fast‑travel hub → `script.lua`
-- Key‑locked portal → Step 02 (gated-access)
-- Puzzle: rotate destinations → `script.lua` + snippet
-- Party arrival VFX → Step 03 (remoteevent + client snippet)
+## What to do next
+**Start with real examples** — check out [use-cases.md](./use-cases.md) to see this basic teleporter turned into actual game features: fast-travel hubs, key-locked portals, rotating puzzle doors.
 
-Great for hubs, fast travel, puzzle rooms, and secret doors.
+**Follow the upgrades** — as you build those examples, you'll need enhanced versions of the basic script. The [steps/](./steps) folder shows you how:
+
+- **Step 01**: Stop teleport spam (cooldown)
+- **Step 02**: Lock behind requirements (gated access)  
+- **Step 03**: Add arrival effects (client events)
+
+All the pieces you need to build teleportation that feels polished and professional.

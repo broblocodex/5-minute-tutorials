@@ -1,39 +1,45 @@
--- Teleporter (simple)
--- How to use: put this Script inside a portal Part.
--- Create an ObjectValue under the Part named "Target" and set it to the destination Part.
+-- Instant Teleporter (the simple version)
+-- Instructions: Drop this Script inside any Part. Set up a Target ObjectValue. Step on it to teleport!
 
 local Players = game:GetService("Players")
 
 local portal = script.Parent
-assert(portal and portal:IsA("BasePart"), "Place this script inside a Part")
+assert(portal and portal:IsA("BasePart"), "Hey! Put this script inside a Part, not floating around loose.")
 
--- Height offset to reduce getting stuck in the floor
+-- Height offset so players don't get stuck in floors
 local SAFE_OFFSET = Vector3.new(0, 4, 0)
 
--- Optional visual
+-- Make it look like a portal (glowy and mysterious)
 portal.Material = Enum.Material.Neon
 portal.BrickColor = BrickColor.new("Cyan")
 
--- Where to go next
+-- Where should this portal take people?
 local targetValue = portal:FindFirstChild("Target")
-assert(targetValue and targetValue:IsA("ObjectValue"), "Add an ObjectValue named 'Target' under the portal and point it to the destination Part")
+assert(targetValue and targetValue:IsA("ObjectValue"), "Add an ObjectValue named 'Target' and point it to your destination Part!")
 
-local function teleportToTarget(player)
-    local char = player.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
+-- The magic: instantly move players to the target location
+local function teleportPlayer(player)
+    local character = player.Character
+    if not character then return end
+    
+    local root = character:FindFirstChild("HumanoidRootPart")
     if not root then return end
 
-    local destPart = targetValue.Value
-    if not destPart or not destPart:IsA("BasePart") then return end
+    local destination = targetValue.Value
+    if not destination or not destination:IsA("BasePart") then return end
 
-    root.CFrame = destPart.CFrame + SAFE_OFFSET
+    -- Teleport them to the destination (with safe height offset)
+    root.CFrame = destination.CFrame + SAFE_OFFSET
 end
 
+-- Listen for players stepping on the portal
 portal.Touched:Connect(function(hit)
-    local hum = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
-    if not hum then return end
-    local player = Players:GetPlayerFromCharacter(hum.Parent)
+    -- Filter out random junk — we only want real players
+    local humanoid = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    local player = Players:GetPlayerFromCharacter(humanoid.Parent)
     if not player then return end
-    teleportToTarget(player)
+    
+    teleportPlayer(player)
 end)

@@ -13,42 +13,50 @@ local SAFE_OFFSET = Vector3.new(0, 4, 0)
 local targetValue = portal:FindFirstChild("Target")
 assert(targetValue and targetValue:IsA("ObjectValue"), "Add an ObjectValue named 'Target' under the portal and point it to the destination Part")
 
-local remote = portal:FindFirstChild("Teleported") -- RemoteEvent (optional)
+-- Optional: Add a RemoteEvent named "Teleported" for visual effects
+local teleportedEvent = portal:FindFirstChild("Teleported")
 
 portal.BrickColor = BrickColor.new("Cyan")
 portal.Material = Enum.Material.Neon
 
-local lastUseAtByUserId = {}
+local lastTeleportTime = {}
 
-local function canUse(player)
+local function canTeleport(player)
     local now = os.clock()
-    local prev = lastUseAtByUserId[player.UserId]
-    if prev and (now - prev) < COOLDOWN then return false end
-    lastUseAtByUserId[player.UserId] = now
+    local lastTime = lastTeleportTime[player.UserId]
+    if lastTime and (now - lastTime) < COOLDOWN then
+        return false
+    end
+    lastTeleportTime[player.UserId] = now
     return true
 end
 
-local function teleport(player)
-    local char = player.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
+local function teleportPlayer(player)
+    local character = player.Character
+    if not character then return end
+    
+    local root = character:FindFirstChild("HumanoidRootPart")
     if not root then return end
-    local destPart = targetValue.Value
-    if not destPart or not destPart:IsA("BasePart") then return end
+    
+    local destination = targetValue.Value
+    if not destination or not destination:IsA("BasePart") then return end
 
-    root.CFrame = destPart.CFrame + SAFE_OFFSET
+    root.CFrame = destination.CFrame + SAFE_OFFSET
 
-    if remote then
-        remote:FireAllClients(portal, player, destPart)
+    -- Tell clients about the teleportation for visual effects
+    if teleportedEvent and teleportedEvent:IsA("RemoteEvent") then
+        teleportedEvent:FireAllClients(portal, player, destination)
     end
 end
 
 portal.Touched:Connect(function(hit)
-    local hum = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
-    if not hum then return end
-    local player = Players:GetPlayerFromCharacter(hum.Parent)
-    if not player or not canUse(player) then return end
-    teleport(player)
+    local humanoid = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    local player = Players:GetPlayerFromCharacter(humanoid.Parent)
+    if not player or not canTeleport(player) then return end
+    
+    teleportPlayer(player)
 end)
 
 
