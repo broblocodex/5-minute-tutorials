@@ -5,7 +5,7 @@ A Part that spins smoothly forever. Perfect for obbies, pedestals, gears, or rid
 ## Files in this tutorial
 
 - [script.lua](script.lua) — simple, copy‑paste spinner
-- [script.extended.lua](script.extended.lua) — presets, click control, RemoteEvent, attributes
+- [steps/](steps) — incremental checkpoints aligned to use-cases (01 → 02)
 - [wiki.md](wiki.md) — tiny study links you’ll actually use
 - [use-cases.md](use-cases.md) — 4 quick ideas to plug into your game
 
@@ -17,9 +17,13 @@ A Part that spins smoothly forever. Perfect for obbies, pedestals, gears, or rid
 
 ## Then explore
 
-- Swap to `script.extended.lua` to get speed presets and click to cycle.
-- Change AXIS to X|Y|Z for different rotation feels.
-- The extended script auto-creates a RemoteEvent named "SpinChanged" (clients can listen for VFX).
-- Attributes are set so other scripts can react (SpeedSec, Axis, Direction).
+- Walk through `steps/` in order:
+  - 01 attributes-presets → 02 remoteevent
+
+## Which step for which use-case?
+- Obby timing gate → Step 01 (update SpeedSec)
+- Team advantage switch → Step 01 (flip Direction)
+- Camera-friendly display pedestal → Step 01 (attributes), optionally Step 02 for client VFX
+- Danger blade → Step 02 (SpinChanged listener on client)
 
 Use this for obstacles, showcases, windmills, and puzzle mechanics.

@@ -3,7 +3,7 @@ Make coins that spin, play a sound, and disappear when collected. Award points t
 
 Files
 - script.lua — simple coin (spin + collect + destroy)
-- script.extended.lua — attributes + RemoteEvent + optional auto-respawn
+- steps/ — incremental checkpoints aligned to use-cases (01 → 02)
 - wiki.md — short study links
 - use-cases.md — four quick ideas
 
@@ -14,16 +14,15 @@ Try it (simple)
 4) Optional: create leaderstats with an IntValue named “Coins” to see scoring.
 5) Play and touch the coin.
 
-Then explore (extended)
-- Attributes on the Part:
-	- CoinValue (number) — how many to award (default 1)
-	- RotateRPS (number) — spin speed
-	- CollectTime (number) — shrink/fade seconds
-	- AutoRespawn (bool) — if true, coin hides then returns
-	- RespawnTime (number) — seconds before respawn
-	- LastUserId (int), LastCollectedAt (int) — hooks for UI/analytics
-- RemoteEvent: CoinCollected (player, value)
-	- Clients can listen to show UI, play local VFX, combo meters, etc.
+Then explore (steps)
+- Walk through `steps/` in order:
+  - 01 attributes → 02 remoteevent
+
+Which step for which use-case?
+- Level Gate → Step 01 (use `CoinValue`; read leaderstats)
+- Combo Collector → Step 02 (listen to `CoinCollected` to run a combo timer)
+- Treasure Trails → Step 01 (increase `CoinValue` for branches)
+- Race Lines → Step 01 or 02 (tune `CoinValue`; optional UI feedback via event)
 
 Notes
 - Uses RunService.Heartbeat for smooth spin.

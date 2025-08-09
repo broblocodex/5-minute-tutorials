@@ -1,29 +1,26 @@
--- Spinning Platform (extended)
--- Copy into a Part. Click to cycle speeds. Change Attributes live.
--- Exposes Attributes: SpeedSec (number), Axis ("X"|"Y"|"Z"), Direction (1|-1)
--- Fires RemoteEvent "SpinChanged" on updates: (speedSec, axis, direction)
+-- Step 02 — RemoteEvent (SpinChanged)
+-- What: fire a RemoteEvent named "SpinChanged" whenever spin parameters change.
+-- Why: clients can do VFX/UI (danger flash, HUD) without changing server code.
 
 local TweenService = game:GetService("TweenService")
 
 local part = script.Parent
 assert(part and part:IsA("BasePart"), "Place this script inside a Part")
 
--- Defaults
 local PRESETS = {0.5, 1, 2, 4}
-local START_INDEX = 3 -- 2 sec/turn
+local START_INDEX = 3
 local CLICK_RANGE = 40
 
--- Internal state
 local currentTween = nil
 local speedSec = part:GetAttribute("SpeedSec") or PRESETS[START_INDEX]
 local axis = part:GetAttribute("Axis") or "Y"
-local direction = part:GetAttribute("Direction") or 1 -- 1 or -1
+local direction = part:GetAttribute("Direction") or 1
 
--- Visual baseline
+-- Visual
 part.Anchored = true
 part.Material = Enum.Material.Neon
 
--- RemoteEvent (child of part)
+-- RemoteEvent
 local spinChanged = part:FindFirstChild("SpinChanged")
 if not spinChanged then
     spinChanged = Instance.new("RemoteEvent")
@@ -40,39 +37,22 @@ local function axisRotation(deg)
 end
 
 local function stopTween()
-    if currentTween then
-        currentTween:Cancel()
-        currentTween = nil
-    end
+    if currentTween then currentTween:Cancel(); currentTween = nil end
 end
 
 local function startTween()
     stopTween()
-    -- Store attributes for others to read
     part:SetAttribute("SpeedSec", speedSec)
     part:SetAttribute("Axis", axis)
     part:SetAttribute("Direction", direction)
-
-    -- Recompute from current CFrame for seamless restart
     local target = part.CFrame * axisRotation(360 * (direction >= 0 and 1 or -1))
     local info = TweenInfo.new(speedSec, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1)
     currentTween = TweenService:Create(part, info, { CFrame = target })
     currentTween:Play()
-
-    -- Optional: play a looped Sound named "SpinSound" under the part
-    local spinSound = part:FindFirstChild("SpinSound")
-    if spinSound and spinSound:IsA("Sound") then
-        spinSound.Looped = true
-        if not spinSound.IsPlaying then spinSound:Play() end
-        -- Map speed to playback (faster spin → higher pitch)
-        spinSound.PlaybackSpeed = math.clamp(2 / speedSec, 0.5, 3)
-    end
-
-    -- Notify clients
     spinChanged:FireAllClients(speedSec, axis, direction)
 end
 
--- Attribute live edits (e.g., from command bar or another script)
+-- Attribute live edits
 part:GetAttributeChangedSignal("SpeedSec"):Connect(function()
     local v = part:GetAttribute("SpeedSec")
     if typeof(v) == "number" and v > 0 then
@@ -97,7 +77,7 @@ part:GetAttributeChangedSignal("Direction"):Connect(function()
     end
 end)
 
--- Click to cycle speed presets
+-- Click to cycle speed
 local clickDetector = part:FindFirstChildOfClass("ClickDetector")
 if not clickDetector then
     clickDetector = Instance.new("ClickDetector")
@@ -106,7 +86,7 @@ if not clickDetector then
 end
 
 local presetIndex = table.find(PRESETS, speedSec) or START_INDEX
-clickDetector.MouseClick:Connect(function(player)
+clickDetector.MouseClick:Connect(function()
     presetIndex = presetIndex + 1
     if presetIndex > #PRESETS then presetIndex = 1 end
     speedSec = PRESETS[presetIndex]
@@ -116,10 +96,4 @@ end)
 -- Kick off
 startTween()
 
--- Cleanup
-part.AncestryChanged:Connect(function(_, parent)
-    if not parent then
-        stopTween()
-        if spinChanged then spinChanged:Destroy() end
-    end
-end)
+

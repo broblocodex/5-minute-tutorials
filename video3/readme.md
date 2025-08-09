@@ -5,7 +5,7 @@ A portal Part that moves players to another Part instantly.
 ## Files in this tutorial
 
 - [script.lua](script.lua) — simple, copy‑paste teleporter
-- [script.extended.lua](script.extended.lua) — cooldown, orientation, sound, RemoteEvent, attributes
+- [steps/](steps) — incremental checkpoints aligned to use-cases (01 → 03)
 - [wiki.md](wiki.md) — tiny study links you’ll actually use
 - [use-cases.md](use-cases.md) — 4 quick ideas to plug into your game
 
@@ -18,9 +18,13 @@ A portal Part that moves players to another Part instantly.
 
 ## Then explore
 
-- Swap to `script.extended.lua` to get per‑player cooldown, optional sound, and clean hooks.
-- Set PRESERVE_ORIENTATION to keep the player’s facing when arriving.
-- Gate access with a Player attribute (for keys/quests).
-- Add a RemoteEvent named "Teleported" under the portal for client VFX.
+- Walk through `steps/` in order:
+  - 01 cooldown → 02 gated-access → 03 remoteevent
+
+## Which step for which use-case?
+- Fast‑travel hub → `script.lua`
+- Key‑locked portal → Step 02 (gated-access)
+- Puzzle: rotate destinations → `script.lua` + snippet
+- Party arrival VFX → Step 03 (remoteevent + client snippet)
 
 Great for hubs, fast travel, puzzle rooms, and secret doors.

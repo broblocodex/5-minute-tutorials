@@ -8,7 +8,7 @@ Step on the pad. It launches you up. Simple physics, instant fun.
 
 ## Files in this tutorial
 - [script.lua](./script.lua) — the simplest version (start here)
-- [script.extended.lua](./script.extended.lua) — variations: cooldown, directional, sound, RemoteEvent, attributes
+- [steps/](./steps) — incremental checkpoints aligned to use-cases (01 → 02)
 - [wiki.md](./wiki.md) — hand‑picked Roblox docs links
 - [use-cases.md](./use-cases.md) — 4 quick ideas to apply it
 
@@ -19,11 +19,14 @@ Step on the pad. It launches you up. Simple physics, instant fun.
 4. Step on it in Play mode.
 
 ## Then explore (3 minutes)
-- Swap to `script.extended.lua` to add:
-	- Per‑player cooldown (no spam)
-	- Direction modes (straight up, forward)
-	- Optional sound on launch
-	- RemoteEvent broadcast + simple attributes so other scripts can react
+- Walk through `steps/` in order:
+    - 01 cooldown → 02 forward-mode (set MODE = "forward")
+
+## Which step for which use-case?
+- Start gate pop → `script.lua`
+- Cooldown gate → Step 01 (cooldown)
+- Forward fling → Step 02 (forward-mode)
+- Combo with speed strip → `script.lua` (strip is separate snippet)
 
 ## Learn more
 - Links live in `wiki.md`.

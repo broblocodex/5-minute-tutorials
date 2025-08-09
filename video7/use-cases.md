@@ -1,18 +1,18 @@
-# Use Cases - The Coin Collector in Game Development
-## Coin Collector – 4 Quick Use Cases
+# Coin Collector — 4 use-cases
+
+Short and focused. Each idea lists which step to use.
+
+Note
+- Each idea should live in its own Script (or LocalScript where called out). Don’t mix snippets. Put the Script on the coin or the controller Part as your setup implies, and declare top-of-snippet variables so references resolve.
 
 1) Level Gate
-Put a Door that opens when Coins >= N. Client listens to CoinCollected to animate a progress bar.
+- Use: Step 01 (attributes). Open a door when leaderstats.Coins >= N. Optionally raise `CoinValue` for rare coins.
 
 2) Combo Collector
-Start a short combo timer on CoinCollected; collecting the next coin before it ends increases a multiplier. Reset on miss.
+- Use: Step 02 (remoteevent). Start a short combo timer on `CoinCollected`; collecting again before it ends increases a multiplier.
 
 3) Treasure Trails
-Place coins as breadcrumbs to guide players. Increase CoinValue for harder branches to reward exploration.
+- Use: Step 01 (attributes). Place coins as breadcrumbs; increase `CoinValue` on harder branches to reward exploration.
 
 4) Race Lines
-Two racing lines: safe vs coin-rich risky path. Use CoinValue and spacing to tune difficulty and reward.
-
-Hook references
-- Attributes: CoinValue, RotateRPS, CollectTime, AutoRespawn, RespawnTime.
-- RemoteEvent: CoinCollected (player, value).
+- Use: Step 01 or 02. Tune `CoinValue` and spacing; optionally listen to `CoinCollected` for UI feedback.

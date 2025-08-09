@@ -5,7 +5,7 @@ A Part that vanishes when stepped on, then comes back after a delay.
 ## Files in this tutorial
 
 - [script.lua](script.lua) — simple, copy‑paste bridge
-- [script.extended.lua](script.extended.lua) — attributes, RemoteEvent, sounds
+- [steps/](steps) — incremental checkpoints aligned to use-cases (01 → 02)
 - [wiki.md](wiki.md) — tiny study links
 - [use-cases.md](use-cases.md) — 4 quick ideas
 
@@ -17,8 +17,13 @@ A Part that vanishes when stepped on, then comes back after a delay.
 
 ## Then explore
 
-- Swap to `script.extended.lua` for Attributes and a `BridgeState` RemoteEvent.
-- Tune timing live via Attributes: DisappearDelay, RespawnDelay, FadeTime.
-- Add optional Sounds named `WarnSound` and `RespawnSound` under the Part.
+- Walk through `steps/` in order:
+  - 01 attributes → 02 remoteevent
+
+## Which step for which use-case?
+- Obby difficulty ramp → Step 01 (lower DisappearDelay progressively)
+- Team path routing → Step 01 (set RespawnDelay per team)
+- Warning UI countdown → Step 02 (listen for "warn")
+- Chase scene effects → Step 02 (hook "vanish"/"respawn" for VFX)
 
 Use this for obbies, chase scenes, and timed puzzle paths.

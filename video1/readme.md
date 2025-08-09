@@ -8,7 +8,7 @@ Touch it. It swaps color. Touch again. New color. Quick feedback, clear cause �
 
 ## Files in this tutorial
 - [script.lua](./script.lua) — the simplest version (start here)
-- [script.extended.lua](./script.extended.lua) — variations: debounce, sound, RemoteEvent, quest gate
+- [steps/](./steps) — incremental checkpoints aligned to use-cases (01 → 04)
 - [wiki.md](./wiki.md) — hand‑picked Roblox docs links
 - [use-cases.md](./use-cases.md) — 4 quick ideas to apply it
 
@@ -19,11 +19,14 @@ Touch it. It swaps color. Touch again. New color. Quick feedback, clear cause �
 4. Play and touch/click.
 
 ## Then explore (3 minutes)
-- Swap to `script.extended.lua` to add:
-	- Touch debounce (smoother UX)
-	- Optional sound on change
-	- RemoteEvent broadcast (client VFX hook)
-	- Simple quest gate via a Player attribute
+- Walk through `steps/` in order:
+    - 01 debounce → 02 attributes → 03 last-user-id → 04 remoteevent
+
+## Which step for which use-case?
+- Secret portal → Step 02 (ColorIndex)
+- Time‑trial boost pad → Step 03 (LastUserId)
+- Lamp color sync → Step 04 (RemoteEvent)
+- Claimable nameplate lamp → Step 04 (RemoteEvent + LastUserId)
 
 ## Learn more
 - Links live in `wiki.md`.

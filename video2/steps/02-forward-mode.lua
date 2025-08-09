@@ -1,5 +1,6 @@
--- Magic Jump Pad (extended variations)
--- Adds: per-player cooldown, direction modes (up/forward), optional sound, RemoteEvent, and Attributes for easy hooks.
+-- Step 02 — Direction mode (up or forward)
+-- What: add a MODE setting to launch either straight up or in the character's look direction.
+-- Why: great for flow sections in speed runs or to guide players across gaps.
 
 local Players = game:GetService("Players")
 local Debris = game:GetService("Debris")
@@ -7,37 +8,32 @@ local Debris = game:GetService("Debris")
 local pad = script.Parent
 assert(pad and pad:IsA("BasePart"), "Place this script inside a Part")
 
--- Config
 local POWER = 50
 local CLEANUP = 0.5
-local CLICK_RANGE = 28
-local COOLDOWN = 0.8 -- seconds per player
-local MODE = "up" -- "up" | "forward"
-local ENABLE_SOUND = false
-local SET_ATTRIBUTES = true
+local CLICK_RANGE = 24
+local COOLDOWN = 0.8 -- keep the per-player cooldown from Step 01
+local MODE = "up" -- change to "forward" for the forward fling use-case
 
--- Optional attachments
-local launchSound = pad:FindFirstChildOfClass("Sound")
-local remote = pad:FindFirstChild("Launched") -- RemoteEvent (optional). Contract: FireAllClients(pad, player, velocity)
+pad.BrickColor = BrickColor.new("Bright yellow")
+pad.Material = Enum.Material.Neon
 
--- State
-local last = {} -- UserId -> os.clock()
+local lastLaunchAtByUserId = {}
 
--- Helpers
 local function canLaunch(player)
     if not player then return false end
-    local t = os.clock()
-    local prev = last[player.UserId]
-    if prev and (t - prev) < COOLDOWN then return false end
-    last[player.UserId] = t
+    local now = os.clock()
+    local prev = lastLaunchAtByUserId[player.UserId]
+    if prev and (now - prev) < COOLDOWN then return false end
+    lastLaunchAtByUserId[player.UserId] = now
     return true
 end
 
--- Returns target linear velocity and MaxForce per axis
 local function computeVelocity(root)
     if MODE == "forward" then
         local look = root.CFrame.LookVector
-        return look * POWER + Vector3.new(0, POWER * 0.6, 0), Vector3.new(4000, math.huge, 4000)
+        local lateral = look * POWER
+        local upward = Vector3.new(0, POWER * 0.6, 0)
+        return lateral + upward, Vector3.new(4000, math.huge, 4000)
     end
     return Vector3.new(0, POWER, 0), Vector3.new(0, math.huge, 0)
 end
@@ -45,17 +41,10 @@ end
 local function launchFor(player, root)
     local vel, maxF = computeVelocity(root)
     local bv = Instance.new("BodyVelocity")
-    bv.Velocity = vel
     bv.MaxForce = maxF
+    bv.Velocity = vel
     bv.Parent = root
     Debris:AddItem(bv, CLEANUP)
-
-    if ENABLE_SOUND and launchSound then launchSound:Play() end
-    if SET_ATTRIBUTES then
-        pad:SetAttribute("LastUserId", player.UserId)
-        pad:SetAttribute("LastVelocityY", vel.Y)
-    end
-    if remote then remote:FireAllClients(pad, player, vel) end
 
     pad.BrickColor = BrickColor.new("Lime green")
     task.delay(0.1, function()
@@ -73,9 +62,6 @@ local function onTouched(hit)
     launchFor(player, root)
 end
 
-pad.BrickColor = BrickColor.new("Bright yellow")
-pad.Material = Enum.Material.Neon
-
 local touchedConn = pad.Touched:Connect(onTouched)
 pad.AncestryChanged:Connect(function(_, parent)
     if parent == nil and touchedConn then touchedConn:Disconnect() end
@@ -90,3 +76,5 @@ clickDetector.MouseClick:Connect(function(player)
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if root then launchFor(player, root) end
 end)
+
+

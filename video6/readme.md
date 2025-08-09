@@ -5,7 +5,7 @@ A Part that gives temporary WalkSpeed boost, then restores normal speed.
 ## Files in this tutorial
 
 - [script.lua](script.lua) — simple, copy‑paste booster
-- [script.extended.lua](script.extended.lua) — attributes, per‑player cooldown, RemoteEvent
+- [steps/](steps) — incremental checkpoints aligned to use-cases (01 → 02)
 - [wiki.md](wiki.md) — tiny study links
 - [use-cases.md](use-cases.md) — 4 quick ideas
 
@@ -17,8 +17,13 @@ A Part that gives temporary WalkSpeed boost, then restores normal speed.
 
 ## Then explore
 
-- Swap to `script.extended.lua` for live tweak Attributes: BoostSpeed, BoostDuration, Cooldown.
-- RemoteEvent `SpeedBoost` fires (player, boostSpeed, duration) for client VFX/UI.
-- Add optional child Sound `BoostSound` for activation.
+- Walk through `steps/` in order:
+  - 01 attributes-cooldown → 02 remoteevent
+
+## Which step for which use-case?
+- Racing catch‑up → Step 01 (adjust attributes dynamically)
+- Risk lane → Step 01 (short cooldown)
+- Combo chain → Step 02 (listen to `SpeedBoost` to drive combo UI)
+- Boost meter UI → Step 02 (use event to render duration bar)
 
 Use for racing catch‑ups, parkour bursts, and timed puzzles.

@@ -2,6 +2,9 @@
 
 Four tiny ideas to spark integrations. Copy and tweak.
 
+Note
+- Each use case should live in its own Script (or LocalScript where called out). Don’t mix snippets. Place the script where the Setup/heading implies, and keep top-of-snippet variables clear (e.g., `local portal = script.Parent`).
+
 ## 1) Fast‑travel hub
 
 - Place 4 portals in a hub. Each portal’s Target points to a zone’s spawn pad.
@@ -9,6 +12,7 @@ Four tiny ideas to spark integrations. Copy and tweak.
 
 Snippet: set the label from the destination Part name.
 ```lua
+local portal = script.Parent
 local target = script.Parent:FindFirstChild("Target")
 local label = script.Parent.SurfaceGui.TextLabel
 label.Text = target.Value and target.Value.Name or "?"
@@ -16,7 +20,7 @@ label.Text = target.Value and target.Value.Name or "?"
 
 ## 2) Key‑locked portal
 
-- In extended script, only allow when the player has a key.
+- Use Step 02 (gated‑access): only allow when the player has a key.
 ```lua
 -- Add near canUse(player)
 local function hasKey(player)
@@ -25,10 +29,10 @@ end
 
 local function canUse(player)
     if not hasKey(player) then return false end
-    -- cooldown check (from script.extended.lua)
-    local t = os.clock(); local prev = last[player.UserId]
+    -- cooldown check (from Step 02)
+    local t = os.clock(); local prev = lastUseAtByUserId[player.UserId]
     if prev and (t - prev) < COOLDOWN then return false end
-    last[player.UserId] = t; return true
+    lastUseAtByUserId[player.UserId] = t; return true
 end
 ```
 
@@ -50,7 +54,7 @@ end)
 
 ## 4) Party arrival VFX
 
-- Add a RemoteEvent named "Teleported" under the portal. On client, spawn a sparkle at arrival.
+- Use Step 03 (remoteevent). Add a RemoteEvent named "Teleported" under the portal. On client, spawn a sparkle at arrival.
 ```lua
 -- Client (LocalScript in StarterPlayerScripts)
 local rs = game:GetService("ReplicatedStorage")
