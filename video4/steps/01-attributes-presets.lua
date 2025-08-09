@@ -1,50 +1,59 @@
--- Step 01 — Attributes + speed presets
--- What: expose spin config via Attributes and add click-to-cycle speed presets.
--- Why: lets other scripts/UI react and control the platform without editing this script.
+-- Step 01 — Clickable Speed Control + Live Attributes
+-- Problem: You want to change spin speed/direction without editing code every time
+-- Solution: Attributes for live control + click-to-cycle speed presets
 
 local TweenService = game:GetService("TweenService")
 
 local part = script.Parent
 assert(part and part:IsA("BasePart"), "Place this script inside a Part")
 
--- Presets and defaults
-local PRESETS = {0.5, 1, 2, 4}
-local START_INDEX = 3 -- 2 sec/turn
-local CLICK_RANGE = 40
+-- Speed presets that players can cycle through by clicking
+local SPEED_PRESETS = {0.5, 1, 2, 4}  -- seconds per full rotation
+local DEFAULT_PRESET = 3  -- Start with 2 seconds (nice and visible)
+local CLICK_RANGE = 40    -- How close you need to be to click it
 
+-- Get current settings from attributes (or use defaults)
 local currentTween = nil
-local speedSec = part:GetAttribute("SpeedSec") or PRESETS[START_INDEX]
+local speedSec = part:GetAttribute("SpeedSec") or SPEED_PRESETS[DEFAULT_PRESET]
 local axis = part:GetAttribute("Axis") or "Y"
-local direction = part:GetAttribute("Direction") or 1 -- 1 or -1
+local direction = part:GetAttribute("Direction") or 1  -- 1 or -1 for reverse
 
--- Visual baseline
 part.Anchored = true
 part.Material = Enum.Material.Neon
 
-local function axisRotation(deg)
-    local r = math.rad(deg)
-    if axis == "X" then return CFrame.Angles(r, 0, 0)
-    elseif axis == "Y" then return CFrame.Angles(0, r, 0)
-    elseif axis == "Z" then return CFrame.Angles(0, 0, r)
-    else return CFrame.Angles(0, r, 0) end
+local function axisRotation(degrees)
+    local radians = math.rad(degrees)
+    if axis == "X" then return CFrame.Angles(radians, 0, 0)
+    elseif axis == "Y" then return CFrame.Angles(0, radians, 0)
+    elseif axis == "Z" then return CFrame.Angles(0, 0, radians)
+    else return CFrame.Angles(0, radians, 0) end
 end
 
-local function stopTween()
-    if currentTween then currentTween:Cancel(); currentTween = nil end
+local function stopCurrentSpin()
+    if currentTween then 
+        currentTween:Cancel()
+        currentTween = nil 
+    end
 end
 
-local function startTween()
-    stopTween()
+-- Start spinning with current settings
+local function startSpin()
+    stopCurrentSpin()
+    
+    -- Update attributes so other scripts can see current settings
     part:SetAttribute("SpeedSec", speedSec)
     part:SetAttribute("Axis", axis)
     part:SetAttribute("Direction", direction)
-    local target = part.CFrame * axisRotation(360 * (direction >= 0 and 1 or -1))
-    local info = TweenInfo.new(speedSec, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1)
-    currentTween = TweenService:Create(part, info, { CFrame = target })
+    
+    -- Create the rotation target (accounting for direction)
+    local targetRotation = part.CFrame * axisRotation(360 * direction)
+    local tweenInfo = TweenInfo.new(speedSec, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1)
+    
+    currentTween = TweenService:Create(part, tweenInfo, { CFrame = targetRotation })
     currentTween:Play()
 end
 
--- Click to cycle speed presets
+-- Set up click-to-cycle-speed functionality
 local clickDetector = part:FindFirstChildOfClass("ClickDetector")
 if not clickDetector then
     clickDetector = Instance.new("ClickDetector")
@@ -52,15 +61,19 @@ if not clickDetector then
     clickDetector.Parent = part
 end
 
-local presetIndex = table.find(PRESETS, speedSec) or START_INDEX
+-- Track which preset we're currently using
+local currentPresetIndex = table.find(SPEED_PRESETS, speedSec) or DEFAULT_PRESET
+
 clickDetector.MouseClick:Connect(function()
-    presetIndex = presetIndex + 1
-    if presetIndex > #PRESETS then presetIndex = 1 end
-    speedSec = PRESETS[presetIndex]
-    startTween()
+    -- Cycle to next speed preset
+    currentPresetIndex = currentPresetIndex + 1
+    if currentPresetIndex > #SPEED_PRESETS then 
+        currentPresetIndex = 1  -- Loop back to fastest
+    end
+    
+    speedSec = SPEED_PRESETS[currentPresetIndex]
+    startSpin()  -- Apply the new speed
 end)
 
--- Kick off
-startTween()
-
-
+-- Start the initial spin
+startSpin()

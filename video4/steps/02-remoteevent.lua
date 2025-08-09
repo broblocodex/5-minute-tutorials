@@ -1,83 +1,89 @@
--- Step 02 — RemoteEvent (SpinChanged)
--- What: fire a RemoteEvent named "SpinChanged" whenever spin parameters change.
--- Why: clients can do VFX/UI (danger flash, HUD) without changing server code.
+-- Step 02 — Network Events for Client Effects
+-- Problem: You want visual/audio feedback when spin changes, but only on player screens
+-- Solution: Fire RemoteEvent when parameters change so LocalScripts can react
 
 local TweenService = game:GetService("TweenService")
 
 local part = script.Parent
 assert(part and part:IsA("BasePart"), "Place this script inside a Part")
 
-local PRESETS = {0.5, 1, 2, 4}
-local START_INDEX = 3
+local SPEED_PRESETS = {0.5, 1, 2, 4}
+local DEFAULT_PRESET = 3
 local CLICK_RANGE = 40
 
 local currentTween = nil
-local speedSec = part:GetAttribute("SpeedSec") or PRESETS[START_INDEX]
+local speedSec = part:GetAttribute("SpeedSec") or SPEED_PRESETS[DEFAULT_PRESET]
 local axis = part:GetAttribute("Axis") or "Y"
 local direction = part:GetAttribute("Direction") or 1
 
--- Visual
 part.Anchored = true
 part.Material = Enum.Material.Neon
 
--- RemoteEvent
-local spinChanged = part:FindFirstChild("SpinChanged")
-if not spinChanged then
-    spinChanged = Instance.new("RemoteEvent")
-    spinChanged.Name = "SpinChanged"
-    spinChanged.Parent = part
+-- Create RemoteEvent for notifying clients about spin changes
+local spinChangedEvent = part:FindFirstChild("SpinChanged")
+if not spinChangedEvent then
+    spinChangedEvent = Instance.new("RemoteEvent")
+    spinChangedEvent.Name = "SpinChanged"
+    spinChangedEvent.Parent = part
 end
 
-local function axisRotation(deg)
-    local r = math.rad(deg)
-    if axis == "X" then return CFrame.Angles(r, 0, 0)
-    elseif axis == "Y" then return CFrame.Angles(0, r, 0)
-    elseif axis == "Z" then return CFrame.Angles(0, 0, r)
-    else return CFrame.Angles(0, r, 0) end
+local function axisRotation(degrees)
+    local radians = math.rad(degrees)
+    if axis == "X" then return CFrame.Angles(radians, 0, 0)
+    elseif axis == "Y" then return CFrame.Angles(0, radians, 0)
+    elseif axis == "Z" then return CFrame.Angles(0, 0, radians)
+    else return CFrame.Angles(0, radians, 0) end
 end
 
-local function stopTween()
-    if currentTween then currentTween:Cancel(); currentTween = nil end
+local function stopCurrentSpin()
+    if currentTween then 
+        currentTween:Cancel()
+        currentTween = nil 
+    end
 end
 
-local function startTween()
-    stopTween()
+local function startSpin()
+    stopCurrentSpin()
+    
     part:SetAttribute("SpeedSec", speedSec)
     part:SetAttribute("Axis", axis)
     part:SetAttribute("Direction", direction)
-    local target = part.CFrame * axisRotation(360 * (direction >= 0 and 1 or -1))
-    local info = TweenInfo.new(speedSec, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1)
-    currentTween = TweenService:Create(part, info, { CFrame = target })
+    
+    local targetRotation = part.CFrame * axisRotation(360 * direction)
+    local tweenInfo = TweenInfo.new(speedSec, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1)
+    
+    currentTween = TweenService:Create(part, tweenInfo, { CFrame = targetRotation })
     currentTween:Play()
-    spinChanged:FireAllClients(speedSec, axis, direction)
+    
+    -- Notify all clients that spin parameters changed
+    spinChangedEvent:FireAllClients(speedSec, axis, direction)
 end
 
--- Attribute live edits
+-- Listen for live attribute changes from other scripts
 part:GetAttributeChangedSignal("SpeedSec"):Connect(function()
-    local v = part:GetAttribute("SpeedSec")
-    if typeof(v) == "number" and v > 0 then
-        speedSec = v
-        startTween()
+    local newSpeed = part:GetAttribute("SpeedSec")
+    if typeof(newSpeed) == "number" and newSpeed > 0 then
+        speedSec = newSpeed
+        startSpin()
     end
 end)
 
 part:GetAttributeChangedSignal("Axis"):Connect(function()
-    local v = part:GetAttribute("Axis")
-    if v == "X" or v == "Y" or v == "Z" then
-        axis = v
-        startTween()
+    local newAxis = part:GetAttribute("Axis")
+    if newAxis == "X" or newAxis == "Y" or newAxis == "Z" then
+        axis = newAxis
+        startSpin()
     end
 end)
 
 part:GetAttributeChangedSignal("Direction"):Connect(function()
-    local v = part:GetAttribute("Direction")
-    if v == 1 or v == -1 then
-        direction = v
-        startTween()
+    local newDirection = part:GetAttribute("Direction")
+    if newDirection == 1 or newDirection == -1 then
+        direction = newDirection
+        startSpin()
     end
 end)
 
--- Click to cycle speed
 local clickDetector = part:FindFirstChildOfClass("ClickDetector")
 if not clickDetector then
     clickDetector = Instance.new("ClickDetector")
@@ -85,15 +91,14 @@ if not clickDetector then
     clickDetector.Parent = part
 end
 
-local presetIndex = table.find(PRESETS, speedSec) or START_INDEX
+local currentPresetIndex = table.find(SPEED_PRESETS, speedSec) or DEFAULT_PRESET
 clickDetector.MouseClick:Connect(function()
-    presetIndex = presetIndex + 1
-    if presetIndex > #PRESETS then presetIndex = 1 end
-    speedSec = PRESETS[presetIndex]
-    startTween()
+    currentPresetIndex = currentPresetIndex + 1
+    if currentPresetIndex > #SPEED_PRESETS then 
+        currentPresetIndex = 1
+    end
+    speedSec = SPEED_PRESETS[currentPresetIndex]
+    startSpin()
 end)
 
--- Kick off
-startTween()
-
-
+startSpin()
