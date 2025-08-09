@@ -120,12 +120,13 @@ end)
 2. Create a detached Attachment (name "LampAttachment") (place it anywhere in 3D space). (if it's still in Beta, make sure it's enabled in studio)
 3. Create a lamp Part as a child of LampAttachment (name "Lamp")
 4. Put this Script(RunContext=Local) inside the LampAttachment
-5. Make sure the ColorBlock is a sibling of LampAttachment
+5. Make sure the ColorBlock is accessible (adjust the path as needed)
 
 ```lua
 -- This runs on each player's computer, so everyone sees the same effect
 local lamp = script.Parent:WaitForChild("Lamp")
-local colorBlock = script.Parent.Parent:WaitForChild("ColorBlock")
+-- Find the ColorBlock (adjust path as needed for your setup)
+local colorBlock = workspace:WaitForChild("ColorBlock")
 
 local colorChangedEvent = colorBlock:WaitForChild("ColorChanged")
 
@@ -157,7 +158,7 @@ syncLampColor()
 1. Use Step 04 (`steps/04-remoteevent.lua`) on your color block
 2. Create a detached Attachment (place it anywhere in 3D space). (if it's still in Beta, make sure it's enabled in studio)
 3. Add a BillboardGui as a child of the Attachment with a TextLabel
-4. Put this LocalScript inside the BillboardGui
+4. Put this Script(RunContext=Local) inside the BillboardGui
 5. Make sure the ColorBlock is accessible (adjust the path as needed)
 
 ```lua
