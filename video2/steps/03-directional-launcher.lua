@@ -1,6 +1,6 @@
--- Step 02 - Forward launch mode (realistic jumping)
--- Problem: Always launching straight up doesn't feel natural for movement pads
--- Solution: Launch players in the direction they're facing (forward + upward)
+-- Step 03 - Directional launcher (perpendicular to surface)
+-- Problem: Basic jump pad only launches straight up. Sometimes you want to launch players in specific directions.
+-- Solution: Use the pad's surface normal (UpVector) to launch players perpendicular to the pad surface
 
 local Players = game:GetService("Players")
 local Debris = game:GetService("Debris")
@@ -11,8 +11,8 @@ assert(jumpPad and jumpPad:IsA("BasePart"), "This script needs to live inside a 
 local LAUNCH_FORCE = 50
 local CLEANUP_TIME = 0.5
 local COOLDOWN = 0.8
-local FORWARD_RATIO = 1.0    -- Forward momentum (100% of launch force)
-local UPWARD_RATIO = 0.7     -- Upward lift (70% of launch force)
+local PERPENDICULAR_RATIO = 1.0 -- How much force perpendicular to surface
+local UPWARD_RATIO = 0.7        -- Additional upward boost (helps with gravity)
 
 jumpPad.BrickColor = BrickColor.new("Bright yellow")
 jumpPad.Material = Enum.Material.Neon
@@ -40,15 +40,15 @@ local function launch(hit)
     local root = humanoid.Parent:FindFirstChild("HumanoidRootPart")
     if not root then return end
 
-    -- Calculate forward + upward launch direction
-    local lookDirection = root.CFrame.LookVector  -- Direction player is facing
-    local forwardForce = lookDirection * (LAUNCH_FORCE * FORWARD_RATIO)  -- Horizontal momentum
-    local upwardForce = Vector3.new(0, LAUNCH_FORCE * UPWARD_RATIO, 0)  -- Upward lift
-    local totalVelocity = forwardForce + upwardForce  -- Combine them
-
     local bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.MaxForce = Vector3.new(4000, math.huge, 4000)  -- Allow horizontal force
-    bodyVelocity.Velocity = totalVelocity  -- Forward + upward direction
+    bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)  -- Apply force in all directions
+    
+    -- Calculate launch direction: perpendicular to pad surface + slight upward
+    local perpendicularForce = jumpPad.CFrame.UpVector * (LAUNCH_FORCE * PERPENDICULAR_RATIO)  -- Away from surface
+    local upwardForce = Vector3.new(0, LAUNCH_FORCE * UPWARD_RATIO, 0)  -- Slight upward boost
+    local totalVelocity = perpendicularForce + upwardForce
+    
+    bodyVelocity.Velocity = totalVelocity
     bodyVelocity.Parent = root
 
     Debris:AddItem(bodyVelocity, CLEANUP_TIME)
@@ -61,5 +61,3 @@ jumpPad.AncestryChanged:Connect(function(_, parent)
         touchConnection:Disconnect()
     end
 end)
-
-

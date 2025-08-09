@@ -6,102 +6,56 @@ Time to steal some ideas. You've got a pad that launches players — now let's t
 
 ---
 
-## 1) Race start gate
+## 1) Spawn area chaos control
 
-**The idea:** Step on the pad at race start to get launched up and over the starting gate. Creates instant excitement and momentum.
+**The idea:** Put jump pads in your spawn area for fun, but use cooldown to prevent new players from getting launched 5 times in one step and rage-quitting.
 
-**Why it works:** Everyone loves that moment of "WHOOSH!" at the beginning of a race. It sets the energy and makes players feel powerful.
+**Why cooldown matters:** Without it, stepping on the pad triggers from legs, arms, torso separately - players get launched way too high and it feels broken instead of fun.
 
 **Setup:**
-1. Use the basic `script.lua` 
-2. Place the pad right at the starting line
-3. Build a gate or barrier that players launch over
-4. Tune `LAUNCH_FORCE` until it feels perfect (usually 45-60)
+1. Use Step 01 (`steps/01-cooldown.lua`) - this is essential here
+2. Place pads around spawn benches or waiting areas
+3. Set `LAUNCH_FORCE` gentle (25-35) and `COOLDOWN` to 0.8s
+4. Players get one smooth launch per step, not a chaotic multi-bounce
 
-**More ideas:** Try making the pad slightly bigger than normal and add a particle effect on launch for extra impact.
+**Test it:** Try the basic script first - you'll see players getting launched multiple times per step. Then switch to Step 01 and feel the difference.
 
 ---
 
-## 2) Anti-spam cooldown
+## 2) Directional launcher
 
-**The idea:** Each player can only use the jump pad once every 0.8 seconds. Prevents chaos in spawn areas while keeping it fun.
+**The idea:** Launch players in the direction they're facing instead of just straight up. Feels much more natural for movement and parkour.
 
-**Why it's brilliant:** Stops griefers from spam-bouncing but doesn't kill the fun for normal players.
+**Why it's better:** When players run toward a jump pad, they expect to keep moving forward, not just bounce up and down in place.
 
 **Setup:**
-1. Use Step 01 (`steps/01-cooldown.lua`)
-2. Place in lobby or spawn area
-3. Adjust `COOLDOWN` value as needed (0.8s is usually perfect)
+1. Use Step 02 (`steps/02-forward-mode.lua`)
+2. Players get launched forward (where they're looking) + upward
+3. Great for parkour courses where momentum matters
+4. The 70% upward / 100% forward ratio feels natural
 
-```lua
--- The key pattern from Step 01:
-local lastLaunchTimes = {}
-local COOLDOWN = 0.8
+**Key insight:** Uses the player's `root.CFrame.LookVector` (where they're facing) instead of just launching straight up.
 
-local function canLaunch(player)
-    if not player then return false end
-    local now = os.clock()
-    local lastTime = lastLaunchTimes[player.UserId]
-    
-    if lastTime and (now - lastTime) < COOLDOWN then 
-        return false  -- Still cooling down
-    end
-    
-    lastLaunchTimes[player.UserId] = now
-    return true
-end
-```
-
-**More ideas:** Add a subtle visual indicator when someone's on cooldown — maybe dim the pad color slightly.
+**More ideas:** Perfect for race tracks or speed-running courses where players want to maintain momentum while getting height boosts.
 
 ---
 
-## 3) Speed strip combo
+## 3) Surface cannon
 
-**The idea:** Hit a speed boost strip, then immediately hit a jump pad while moving fast. The combination creates massive air time.
+**The idea:** Launch players perpendicular to the pad's surface. Place pads on walls, ceilings, or angled surfaces to shoot players in any direction.
 
-**Perfect for:** Obstacle courses, racing games, any place you want players to feel like superheroes.
+**Why it's brilliant:** The launch direction is based on the pad's surface normal - place it on a wall and players shoot away from the wall, place it angled and they launch at that exact angle.
 
 **Setup:**
-1. Create a speed strip Part that boosts WalkSpeed for 2 seconds
-2. Place a jump pad right after it (timing is everything)
-3. Use basic `script.lua` for the pad
+1. Use Step 03 (`steps/03-directional-launcher.lua`) 
+2. Place/rotate the pad surface to face the direction you want players launched
+3. The pad's green color shows it's directional
+4. Adjust `FORWARD_RATIO` and `UP_RATIO` for different trajectories
 
-**Speed strip code** (put this in a separate Script inside the speed strip Part):
-```lua
-local Players = game:GetService("Players")
-local speedStrip = script.Parent
-
-local SPEED_BOOST = 8  -- How much faster they go
-local BOOST_DURATION = 2  -- How long the boost lasts
-
-speedStrip.Touched:Connect(function(hit)
-    local humanoid = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return end
-    
-    local player = Players:GetPlayerFromCharacter(hit.Parent)
-    if not player then return end
-    
-    -- Apply speed boost
-    local originalSpeed = humanoid.WalkSpeed
-    humanoid.WalkSpeed = originalSpeed + SPEED_BOOST
-    
-    -- Remove boost after duration
-    task.delay(BOOST_DURATION, function()
-        if humanoid.Parent then  -- Check if player still exists
-            humanoid.WalkSpeed = originalSpeed
-        end
-    end)
-    
-    -- Visual feedback
-    speedStrip.BrickColor = BrickColor.new("Cyan")
-    task.delay(0.2, function()
-        speedStrip.BrickColor = BrickColor.new("White")
-    end)
-end)
-```
-
-**More ideas:** Put the jump pad exactly 2-3 studs after the speed strip ends. Players should hit it right as they're at peak speed.
+**Perfect for:** 
+- Wall-mounted launchers that shoot players across rooms
+- Angled pads that launch players up and over obstacles  
+- Ceiling-mounted pads for dramatic downward launches
 
 ---
 
