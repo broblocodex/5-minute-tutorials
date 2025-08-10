@@ -29,8 +29,7 @@ If you teleport between them, you've got it working. If you get stuck in the flo
 
 **Follow the upgrades** — as you build those examples, you'll need enhanced versions of the basic script. The [steps/](./steps) folder shows you how:
 
-- **Step 01**: Stop teleport spam (cooldown)
-- **Step 02**: Lock behind requirements (gated access)  
-- **Step 03**: Add arrival effects (client events)
+- **Step 01**: Lock behind requirements (gated access)  
+- **Step 02**: Add arrival effects (client events)
 
 All the pieces you need to build teleportation that feels polished and professional.

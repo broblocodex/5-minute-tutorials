@@ -14,7 +14,7 @@ local COOLDOWN = 0.8
 local FORWARD_RATIO = 1.0    -- Forward momentum (100% of launch force)
 local UPWARD_RATIO = 0.7     -- Upward lift (70% of launch force)
 
-jumpPad.BrickColor = BrickColor.new("Bright yellow")
+jumpPad.BrickColor = BrickColor.new("Bright red")
 jumpPad.Material = Enum.Material.Neon
 
 local lastLaunchTime = {}

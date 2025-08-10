@@ -6,17 +6,19 @@ Here's the bare minimum that matters for teleportation.
 
 | Thing | What It Does | When You Need It |
 |-------|-------------|------------------|
-| `Players` | Connects character models to actual players | Getting player data for cooldowns and permissions |
+| `Players` | Connects character models to actual players | Getting player data for access control and RemoteEvents |
 | `BasePart.Touched` | Fires when something hits your portal | The trigger for all teleportation |
 | `Humanoid` | Proves something is a real character | Filtering out random parts and NPCs |
 | `HumanoidRootPart` | The physics center of a character | What you actually teleport (not the character model) |
-| `CFrame` | Position + rotation in one object | Controlling where players appear after teleporting |
-| `Vector3` | 3D direction and magnitude | Height offsets to prevent floor-clipping |
+| `CFrame` | Position + rotation in one object | Controlling where players appear and which way they face |
+| `CFrame.LookVector` | The "forward" direction of an object | Spawning players in front of destination portals |
+| `Vector3` | 3D direction and magnitude | Height offsets and directional positioning |
 | `ObjectValue` | Reference to another object | Linking portals to their destinations |
+| `RemoteEvent` | Server-to-client communication | Triggering visual effects on teleportation |
 
 ## Code patterns
 
-**Safe teleportation (always do this):**
+**Safe directional teleportation (modern approach):**
 ```lua
 local function teleportPlayer(player, destination)
     local character = player.Character
@@ -25,36 +27,38 @@ local function teleportPlayer(player, destination)
     local root = character:FindFirstChild("HumanoidRootPart")
     if not root then return end
     
-    -- Always add height offset to avoid getting stuck in floors
-    root.CFrame = destination.CFrame + Vector3.new(0, 4, 0)
+    -- Spawn in front of destination to prevent ping-pong loops
+    local frontOffset = destination.CFrame.LookVector * 8
+    local heightOffset = Vector3.new(0, 2, 0)
+    local finalPosition = destination.CFrame.Position + frontOffset + heightOffset
+    
+    root.CFrame = CFrame.lookAt(finalPosition, finalPosition + destination.CFrame.LookVector)
 end
 ```
 
-**Per-player cooldown tracking:**
+**Player attribute checking (for gated access):**
 ```lua
-local lastTeleportTime = {}
-local COOLDOWN = 2.0
-
-local function canTeleport(player)
-    local now = os.clock()
-    local lastTime = lastTeleportTime[player.UserId]
-    if lastTime and (now - lastTime) < COOLDOWN then
-        return false
-    end
-    lastTeleportTime[player.UserId] = now
-    return true
+local function hasRequiredAccess(player)
+    return player:GetAttribute("HasBlueKey") == true
 end
+
+-- Use in your touch handler
+if not hasRequiredAccess(player) then return end
 ```
 
 ## Common gotchas
 
-**Players get stuck in floors**
-- Problem: Teleporting directly to a Part's position puts players inside it
-- Solution: Always add a height offset like `Vector3.new(0, 4, 0)`
+**Players spawn inside destination portals (ping-pong effect)**
+- Problem: Teleporting directly to a portal's position triggers immediate re-teleportation
+- Solution: Use directional spawning - place players in front of the destination using `CFrame.LookVector`
 
-**Teleporter triggers too many times**
-- Problem: Touch events fire rapidly, causing multiple teleports
-- Solution: Add per-player cooldowns (1-2 seconds is usually good)
+**Players get stuck in floors**
+- Problem: Spawning at exact floor level clips players into geometry
+- Solution: Add a small height offset like `Vector3.new(0, 2, 0)`
+
+**Players face wrong direction after teleporting**
+- Problem: Only setting position doesn't control which way players look
+- Solution: Use `CFrame.lookAt()` to set both position and orientation
 
 ## The official docs
 

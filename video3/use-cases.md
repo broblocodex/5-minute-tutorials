@@ -15,19 +15,50 @@ Time to steal some ideas. You've got a teleporter that moves players — now let
 **Setup:**
 1. Use the basic `script.lua` in each portal
 2. Point each Target to a spawn pad in different zones  
-3. Add a SurfaceGui label showing where each portal goes
+3. Add the script longside with the teleporter script (it will add a SurfaceGui with TextLabel automatically)
 
 ```lua
--- Put this in each portal to auto-label the destination
+-- Auto-label portals with their destination names
 local portal = script.Parent
 local target = portal:FindFirstChild("Target")
-local label = portal.SurfaceGui.TextLabel
 
--- Show the destination name
-label.Text = target.Value and target.Value.Name or "Unknown"
+-- Create the UI if it doesn't exist
+local surfaceGui = portal:FindFirstChild("SurfaceGui")
+if not surfaceGui then
+    surfaceGui = Instance.new("SurfaceGui")
+    surfaceGui.Face = Enum.NormalId.Front  -- Show on top face - change to Top/Back/etc as needed
+    surfaceGui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+    surfaceGui.PixelsPerStud = 50  -- Higher = sharper text
+    surfaceGui.Parent = portal
+end
+
+local textLabel = surfaceGui:FindFirstChild("TextLabel")
+if not textLabel then
+    textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 1, 0)  -- Fill the entire surface
+    textLabel.BackgroundTransparency = 0.3
+    textLabel.BackgroundColor3 = Color3.new(0, 0, 0)  -- Semi-transparent black
+    textLabel.TextColor3 = Color3.new(1, 1, 1)  -- White text
+    textLabel.TextScaled = true  -- Auto-size text to fit
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.Parent = surfaceGui
+end
+
+-- Update the label with destination name
+local function updateLabel()
+    if target.Value then
+        textLabel.Text = "→ " .. target.Value.Name
+    else
+        textLabel.Text = "No Destination"
+    end
+end
+
+-- Update immediately and whenever target changes
+updateLabel()
+target.Changed:Connect(updateLabel)
 ```
 
-**More ideas:** Color-code each portal to match its destination zone.
+**More ideas:** Color-code each portal and its label to match the destination zone, or add icons for different area types.
 
 ---
 
@@ -35,7 +66,7 @@ label.Text = target.Value and target.Value.Name or "Unknown"
 
 **The idea:** Portal only works if you have the right key. Great for progression systems and secret areas.
 
-**Why it's brilliant:** Creates natural game progression. Players feel rewarded when they finally unlock new areas.
+**Why it works:** Creates natural game progression. Players feel rewarded when they finally unlock new areas.
 
 **Setup:**
 1. Use Step 02 (`steps/02-gated-access.lua`)
@@ -69,37 +100,72 @@ end)
 
 ---
 
-## 3) Rotating puzzle portal
+## 3) Portal with arrival effects
 
-**The idea:** One portal that cycles between 3 different destinations when clicked. Players must figure out the pattern.
+**The idea:** Teleporter that plays a sound and shows a quick visual effect when you arrive, making teleportation feel more satisfying.
 
-**Why it's genius:** Adds puzzle elements to movement. Creates those "aha!" moments when players crack the rotation pattern.
+**Why it's awesome:** Just a little audio-visual feedback makes teleportation feel way more polished and satisfying to use.
 
 **Setup:**
-1. Use the basic `script.lua`
-2. Add destinations to workspace (A, B, C)
-3. Add this cycling logic
+1. Use Step 02 (`steps/02-remoteevent.lua`) 
+2. Add a RemoteEvent named "Teleported" under each portal
+3. Add this simple Script(RunContext=Client) for arrival effects
 
 ```lua
--- Put this in the portal to make it cycle destinations
-local portal = script.Parent
-local target = portal:FindFirstChild("Target")
-local destinations = {workspace.ZoneA, workspace.ZoneB, workspace.ZoneC}
-local currentIndex = 1
+-- Simple teleportation effects (CLIENT SCRIPT)
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
 
-local clickDetector = Instance.new("ClickDetector")
-clickDetector.Parent = portal
+-- Store original portal colors to avoid conflicts
+local portalOriginalColors = {}
 
-clickDetector.MouseClick:Connect(function()
-    currentIndex = (currentIndex % #destinations) + 1
-    target.Value = destinations[currentIndex]
+-- Function to create arrival effect
+local function onPlayerTeleported(teleportedPlayer, sourcePortal, destinationPortal)
+    -- Only show effects for this player
+    if teleportedPlayer ~= player then return end
     
-    -- Visual feedback showing current destination
-    portal.BrickColor = BrickColor.new({"Bright red", "Bright green", "Bright blue"}[currentIndex])
-end)
+    -- Quick camera punch effect
+    local camera = workspace.CurrentCamera
+    local originalCFrame = camera.CFrame
+    
+    -- Single quick shake
+    local shakeOffset = Vector3.new(
+        math.random(-1, 1),
+        math.random(-1, 1),
+        math.random(-1, 1)
+    )
+    
+    camera.CFrame = originalCFrame + shakeOffset
+    
+    -- Smoothly return to original position
+    task.wait(0.1)
+    camera.CFrame = originalCFrame
+    
+    -- Portal flash effect (store original color only once)
+    if not portalOriginalColors[destinationPortal] then
+        portalOriginalColors[destinationPortal] = destinationPortal.BrickColor
+    end
+    
+    destinationPortal.BrickColor = BrickColor.new("Bright green")
+    
+    task.spawn(function()
+        task.wait(0.15)
+        destinationPortal.BrickColor = portalOriginalColors[destinationPortal]
+    end)
+end
+
+-- Connect to your portal's RemoteEvent
+local myPortal = workspace:FindFirstChild("Portal1")  -- Change this to your portal's name
+if myPortal then
+    local teleportEvent = myPortal:FindFirstChild("Teleported")
+    if teleportEvent then
+        teleportEvent.OnClientEvent:Connect(onPlayerTeleported)
+    end
+end
 ```
 
-**More ideas:** Add sound effects for each rotation to give players audio cues.
+**More ideas:** Try different shake intensities or add a small particle burst at the destination.
 
 ---
 

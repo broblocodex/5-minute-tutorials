@@ -49,14 +49,7 @@ Time to steal some ideas. You've got a pad that launches players — now let's t
 **Setup:**
 1. Use Step 03 (`steps/03-directional-launcher.lua`) 
 2. Place/rotate the pad surface to face the direction you want players launched
-3. The pad's green color shows it's directional
-4. Adjust `FORWARD_RATIO` and `UP_RATIO` for different trajectories
-
-**Perfect for:** 
-- Wall-mounted launchers that shoot players across rooms
-- Angled pads that launch players up and over obstacles  
-- Ceiling-mounted pads for dramatic downward launches
 
 ---
 
-Here's the thing: jump pads work best when players don't expect them. Tuck one around a corner, hide it after a long climb, or put it right where someone's about to give up on a tricky jump. That surprise "WHOOSH!" moment? That's what keeps people playing.
+Here's the thing: jump pads work best when players don't expect them. Tuck one around a corner, hide it after a long climb, or put it right where someone's about to give up on a tricky jump.

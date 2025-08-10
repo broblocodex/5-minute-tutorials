@@ -14,7 +14,7 @@ local COOLDOWN = 0.8
 local PERPENDICULAR_RATIO = 1.0 -- How much force perpendicular to surface
 local UPWARD_RATIO = 0.7        -- Additional upward boost (helps with gravity)
 
-jumpPad.BrickColor = BrickColor.new("Bright yellow")
+jumpPad.BrickColor = BrickColor.new("Bright green")
 jumpPad.Material = Enum.Material.Neon
 
 local lastLaunchTime = {}
