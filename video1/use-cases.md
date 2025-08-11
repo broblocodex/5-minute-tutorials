@@ -14,7 +14,7 @@ Time to steal some ideas. You've got a block that changes colors — now let's t
 
 **Setup:**
 1. Use Step 02 (`steps/02-attributes.lua`) or later
-2. Add a portal Part(name "Portal") with `CanCollide=false` and `Transparency=1`
+2. Add a portal Part(name "Portal") with `CanCollide=false` and `Transparency=1`, `Anchored=true`
 3. Put both under one Model, add this Script to the portal block
 
 ```lua
