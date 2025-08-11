@@ -1,79 +1,87 @@
--- Step 01 — Clickable Speed Control + Live Attributes
--- Problem: You want to change spin speed/direction without editing code every time
--- Solution: Attributes for live control + click-to-cycle speed presets
+-- Step 01 - Clickable Speed Control
+-- Problem: You want to change spin speed without editing the script each time.
+-- Solution: Add click-to-cycle presets (no attributes yet — those come later).
+
+local STEP_DEGREES = 120
+local AXIS = "Y"
+
+-- Click speed control config
+local SPEED_PRESETS = {0.5, 1, 2, 4}
+local DEFAULT_PRESET = 3
+local CLICK_RANGE = 40
 
 local TweenService = game:GetService("TweenService")
 
 local part = script.Parent
-assert(part and part:IsA("BasePart"), "Place this script inside a Part")
+assert(part and part:IsA("BasePart"), "This script needs to live inside a Part, not floating around!")
 
--- Speed presets that players can cycle through by clicking
-local SPEED_PRESETS = {0.5, 1, 2, 4}  -- seconds per full rotation
-local DEFAULT_PRESET = 3  -- Start with 2 seconds (nice and visible)
-local CLICK_RANGE = 40    -- How close you need to be to click it
-
--- Get current settings from attributes (or use defaults)
-local currentTween = nil
-local speedSec = part:GetAttribute("SpeedSec") or SPEED_PRESETS[DEFAULT_PRESET]
-local axis = part:GetAttribute("Axis") or "Y"
-local direction = part:GetAttribute("Direction") or 1  -- 1 or -1 for reverse
+local currentTween = nil          -- Track active tween so we can cancel when speed changes
+local secondsPerTurn = SPEED_PRESETS[DEFAULT_PRESET]  -- Current selected speed (seconds per full spin)
 
 part.Anchored = true
 part.Material = Enum.Material.Neon
 
+-- Set initial speed attribute
+part:SetAttribute("SpeedSec", secondsPerTurn)
+
 local function axisRotation(degrees)
     local radians = math.rad(degrees)
-    if axis == "X" then return CFrame.Angles(radians, 0, 0)
-    elseif axis == "Y" then return CFrame.Angles(0, radians, 0)
-    elseif axis == "Z" then return CFrame.Angles(0, 0, radians)
+    if AXIS == "X" then return CFrame.Angles(radians, 0, 0)
+    elseif AXIS == "Y" then return CFrame.Angles(0, radians, 0)
+    elseif AXIS == "Z" then return CFrame.Angles(0, 0, radians)
     else return CFrame.Angles(0, radians, 0) end
 end
 
+-- Stop any current spin tween
 local function stopCurrentSpin()
-    if currentTween then 
-        currentTween:Cancel()
-        currentTween = nil 
-    end
+	if currentTween then
+		currentTween:Cancel()
+		currentTween = nil
+	end
 end
 
--- Start spinning with current settings
-local function startSpin()
-    stopCurrentSpin()
-    
-    -- Update attributes so other scripts can see current settings
-    part:SetAttribute("SpeedSec", speedSec)
-    part:SetAttribute("Axis", axis)
-    part:SetAttribute("Direction", direction)
-    
-    -- Create the rotation target (accounting for direction)
-    local targetRotation = part.CFrame * axisRotation(360 * direction)
-    local tweenInfo = TweenInfo.new(speedSec, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1)
-    
-    currentTween = TweenService:Create(part, tweenInfo, { CFrame = targetRotation })
-    currentTween:Play()
+-- Perform one step of rotation, then repeat
+local function spin()
+	local duration = secondsPerTurn * (STEP_DEGREES / 360)
+	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+
+	-- Rotate relative to current position (prevents snapping/freezing on click)
+	local target = part.CFrame * axisRotation(STEP_DEGREES)
+
+	currentTween = TweenService:Create(part, tweenInfo, { CFrame = target })
+	currentTween.Completed:Once(function(state)
+		if state == Enum.PlaybackState.Completed then
+			spin()
+		end
+	end)
+	currentTween:Play()
 end
 
--- Set up click-to-cycle-speed functionality
+-- Restart spinning with new speed
+local function restartSpin()
+	stopCurrentSpin()
+	spin()
+end
+
+-- Click-to-cycle-speed functionality
 local clickDetector = part:FindFirstChildOfClass("ClickDetector")
 if not clickDetector then
-    clickDetector = Instance.new("ClickDetector")
-    clickDetector.MaxActivationDistance = CLICK_RANGE
-    clickDetector.Parent = part
+	clickDetector = Instance.new("ClickDetector")
+	clickDetector.MaxActivationDistance = CLICK_RANGE
+	clickDetector.Parent = part
 end
 
--- Track which preset we're currently using
-local currentPresetIndex = table.find(SPEED_PRESETS, speedSec) or DEFAULT_PRESET
+-- Track which preset we're using
+local currentPresetIndex = DEFAULT_PRESET
 
 clickDetector.MouseClick:Connect(function()
-    -- Cycle to next speed preset
-    currentPresetIndex = currentPresetIndex + 1
-    if currentPresetIndex > #SPEED_PRESETS then 
-        currentPresetIndex = 1  -- Loop back to fastest
-    end
-    
-    speedSec = SPEED_PRESETS[currentPresetIndex]
-    startSpin()  -- Apply the new speed
+	currentPresetIndex += 1
+	if currentPresetIndex > #SPEED_PRESETS then
+		currentPresetIndex = 1
+	end
+	secondsPerTurn = SPEED_PRESETS[currentPresetIndex]
+	part:SetAttribute("SpeedSec", secondsPerTurn)  -- Update attribute when speed changes
+	restartSpin()
 end)
 
--- Start the initial spin
-startSpin()
+spin()

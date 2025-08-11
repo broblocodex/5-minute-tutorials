@@ -104,7 +104,7 @@ end)
 
 **The idea:** Teleporter that plays a sound and shows a quick visual effect when you arrive, making teleportation feel more satisfying.
 
-**Why it's awesome:** Just a little audio-visual feedback makes teleportation feel way more polished and satisfying to use.
+**Why it works:** Just a little audio-visual feedback makes teleportation feel way more polished and satisfying to use.
 
 **Setup:**
 1. Use Step 02 (`steps/02-remoteevent.lua`) 

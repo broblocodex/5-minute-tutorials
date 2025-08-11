@@ -26,7 +26,7 @@ Time to steal some ideas. You've got a pad that launches players — now let's t
 
 **The idea:** Launch players in the direction they're facing instead of just straight up. Feels much more natural for movement and parkour.
 
-**Why it's better:** When players run toward a jump pad, they expect to keep moving forward, not just bounce up and down in place.
+**Why it works:** When players run toward a jump pad, they expect to keep moving forward, not just bounce up and down in place.
 
 **Setup:**
 1. Use Step 02 (`steps/02-forward-mode.lua`)
@@ -44,7 +44,7 @@ Time to steal some ideas. You've got a pad that launches players — now let's t
 
 **The idea:** Launch players perpendicular to the pad's surface. Place pads on walls, ceilings, or angled surfaces to shoot players in any direction.
 
-**Why it's brilliant:** The launch direction is based on the pad's surface normal - place it on a wall and players shoot away from the wall, place it angled and they launch at that exact angle.
+**Why it works:** The launch direction is based on the pad's surface normal - place it on a wall and players shoot away from the wall, place it angled and they launch at that exact angle.
 
 **Setup:**
 1. Use Step 03 (`steps/03-directional-launcher.lua`) 
