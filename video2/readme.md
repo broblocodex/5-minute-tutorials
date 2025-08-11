@@ -1,30 +1,39 @@
-# Magic Jump Pad — 5‑minute tutorial
+# 5‑Minute Tutorial: Magic Jump Pad
 
-Step on the pad. It launches you up. Simple physics, instant fun.
+Ever stepped on a trampoline? That's exactly what we're building, except in Roblox. Touch the pad, get launched into the air. It's physics made fun.
 
-## What you’ll build
-- A Part that launches any player who touches it.
-- Starts simple. Then add variations (cooldown, direction, sound, remote hooks).
+Here's why this matters: jump pads are everywhere in successful games. Obbies, racing games, battle arenas, speed runs — they all use this same core mechanic. Master this pattern, and you've got the foundation for tons of movement systems.
 
-## Files in this tutorial
-- [script.lua](./script.lua) — the simplest version (start here)
-- [script.extended.lua](./script.extended.lua) — variations: cooldown, directional, sound, RemoteEvent, attributes
-- [wiki.md](./wiki.md) — hand‑picked Roblox docs links
-- [use-cases.md](./use-cases.md) — 4 quick ideas to apply it
+## What you're actually building
+A Part that launches players upward (or forward) when touched. We start with basic physics, then add cooldowns and directional control.
 
-## Try it (2 minutes)
-1. Insert a Part.
-2. Put a Server Script inside.
-3. Paste `script.lua`.
-4. Step on it in Play mode.
+Think of it as controlled chaos — predictable enough to be useful, exciting enough to be fun.
 
-## Then explore (3 minutes)
-- Swap to `script.extended.lua` to add:
-	- Per‑player cooldown (no spam)
-	- Direction modes (straight up, forward)
-	- Optional sound on launch
-	- RemoteEvent broadcast + simple attributes so other scripts can react
+## What's in here
+- [script.lua](./script.lua) — the dead simple version (start here)
+- [steps/](./steps) — each step adds one new concept (01→02)
+- [wiki.md](./wiki.md) — the Roblox docs that actually matter
+- [use-cases.md](./use-cases.md) — real examples you can steal
 
-## Learn more
-- Links live in `wiki.md`.
-- See examples in `use-cases.md`.
+## Get it working (2 minutes)
+1. Drop a Part in your workspace (name it JumpPad)
+2. Stick a Script inside it
+3. Copy-paste the code from `script.lua`
+4. Hit Play, step on the pad
+
+If you go flying, you've nailed it. If not, check the Output window for errors.
+
+## What to do next
+**Start with real examples** — check out [use-cases.md](./use-cases.md) to see this basic pad turned into actual game features: race start gates, anti-spam cooldowns, forward flings, speed combos.
+
+**Follow the upgrades** — as you build those examples, you'll need enhanced versions of the basic script. The [steps/](./steps) folder shows you how:
+
+- **Step 01**: Add per-player cooldown (anti-spam)
+- **Step 02**: Launch forward instead of just up
+
+Each use-case tells you which step to use.
+
+## Dive deeper
+The [wiki.md](./wiki.md) has the Roblox docs you'll actually use. The [use-cases.md](./use-cases.md) shows you how to build real features with this pattern.
+
+Copy the code. Break it. Fix it. That's how you learn.

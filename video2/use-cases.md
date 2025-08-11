@@ -1,68 +1,55 @@
-# Use Cases (in‑game inspiration)
+# Real-World examples
 
-Short, fun, and copyable. Four ways to use a jump pad today.
+Time to steal some ideas. You've got a pad that launches players — now let's turn it into features that make games memorable.
 
----
-
-## 1) Start gate pop (obby/race)
-- Where: race start line, challenge gate.
-- Goal: step on pad → pop up and over the gate for a hype start.
-
-Setup
-1) Use `script.lua`.
-2) Tune POWER (LAUNCH_FORCE) until it feels right.
-
-Tiny snippet (color pulse):
-```lua
-pad.BrickColor = BrickColor.new("Lime green")
-task.delay(0.1, function() pad.BrickColor = BrickColor.new("Bright yellow") end)
-```
+**Important:** Each snippet goes in its own Script. Don't try to mash them together — that way lies confusion and bugs.
 
 ---
 
-## 2) Forward fling (speed run)
-- Where: straightaway into a big jump.
-- Goal: launch in look direction for flow.
+## 1) Spawn area fun zone
 
-Setup
-1) Use `script.extended.lua` and set MODE = "forward".
+**The idea:** Put jump pads around your spawn area to give players something fun to do while waiting for games to start or friends to join.
 
-Tiny snippet (forward velocity idea):
-```lua
-local look = root.CFrame.LookVector
-bv.MaxForce = Vector3.new(4000, math.huge, 4000)
-bv.Velocity = look * POWER + Vector3.new(0, POWER * 0.6, 0)
-```
+**Why it works:** Creates a lively, energetic atmosphere. Players naturally gravitate toward bouncing around, and it makes your lobby feel alive and welcoming.
 
----
+**Setup:**
+1. Use Step 01 (`steps/01-cooldown.lua`) - prevents the multi-launch spam issue
+2. Place 3-5 pads around benches, waiting areas, or open spaces
+3. Keep `LAUNCH_FORCE` moderate (35-45) - fun but not overwhelming
+4. Space them out so players don't accidentally chain-bounce
 
-## 3) Combo with speed strip
-- Where: arc jump after a boost.
-- Goal: hit speed strip → hit jump pad → big air.
-
-Setup
-1) On the speed strip, give WalkSpeed boost for 2s; place pad right after it.
-
-Tiny snippet (speed strip):
-```lua
-local old = hum.WalkSpeed
-hum.WalkSpeed = old + 8
-task.delay(2, function() hum.WalkSpeed = old end)
-```
+**More ideas:** Different colored pads for different launch heights.
 
 ---
 
-## 4) Cooldown gate (anti‑spam)
-- Where: spawn area, lobby toy.
-- Goal: stop spam launching; 0.8s personal cooldown.
+## 2) Directional launcher
 
-Setup
-1) Use `script.extended.lua` (it includes a per‑player cooldown).
+**The idea:** Launch players in the direction they're facing instead of just straight up. Feels much more natural for movement and parkour.
 
-Tiny snippet (pattern):
-```lua
-local last = {}
-local t, prev = os.clock(), last[uid]
-if prev and (t - prev) < 0.8 then return end
-last[uid] = t
-```
+**Why it works:** When players run toward a jump pad, they expect to keep moving forward, not just bounce up and down in place.
+
+**Setup:**
+1. Use Step 02 (`steps/02-forward-mode.lua`)
+2. Players get launched forward (where they're looking) + upward
+3. Great for parkour courses where momentum matters
+4. The 70% upward / 100% forward ratio feels natural
+
+**Key insight:** Uses the player's `root.CFrame.LookVector` (where they're facing) instead of just launching straight up.
+
+**More ideas:** Perfect for race tracks or speed-running courses where players want to maintain momentum while getting height boosts.
+
+---
+
+## 3) Surface cannon
+
+**The idea:** Launch players perpendicular to the pad's surface. Place pads on walls, ceilings, or angled surfaces to shoot players in any direction.
+
+**Why it works:** The launch direction is based on the pad's surface normal - place it on a wall and players shoot away from the wall, place it angled and they launch at that exact angle.
+
+**Setup:**
+1. Use Step 03 (`steps/03-directional-launcher.lua`) 
+2. Place/rotate the pad surface to face the direction you want players launched
+
+---
+
+Here's the thing: jump pads work best when players don't expect them. Tuck one around a corner, hide it after a long climb, or put it right where someone's about to give up on a tricky jump.
