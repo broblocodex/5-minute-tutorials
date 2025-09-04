@@ -10,6 +10,7 @@ Tutorials
 - [2. Jump Pad](video2/) — physics impulse
 - [3. Teleporter](video3/) — CFrame placement
 - [4. Spinning Platform](video4/) — tween loops
+- [5. Random Walker NPC](video5/) — pathfinding + animation
 
 Each folder includes
 - script.lua (complete working code)
