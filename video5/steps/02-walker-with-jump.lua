@@ -225,6 +225,8 @@ local function follow(waypoints, goalPos)
 	playIdle()
 end
 
+playIdle()
+
 while character.Parent do
 	local part, waypoints = pickWaypoint()
 	if not part or not waypoints then
