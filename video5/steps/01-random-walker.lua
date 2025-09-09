@@ -169,6 +169,8 @@ local function follow(waypoints, goalPos)
 	playIdle()
 end
 
+playIdle()
+
 while character.Parent do
 	-- Pick a reachable random waypoint, then follow its computed path
 	local part, waypoints = pickWaypoint()

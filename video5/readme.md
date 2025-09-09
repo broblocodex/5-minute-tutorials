@@ -26,31 +26,40 @@ Start simple: play a standing idle animation on an NPC. Then upgrade to random w
 Animation setup is out of scope here — use your favorite rig. If you need help, find a short setup tutorial on our channel and subscribe: https://www.youtube.com/@broblocodex
 
 ## Get it working (2–4 minutes)
-Step A — Idle test (script.lua)
+Step 1 — Idle test (script.lua)
 1) Insert a Script into your NPC model, paste `script.lua`.
 2) Replace `IDLE_ANIM_ID` with your asset id (optional; uses placeholder otherwise).
 3) Play. NPC should stand and loop the idle.
 
-Step B — Walking (steps/01-random-walker.lua)
+Step 2 — Walking (steps/01-random-walker.lua)
 1) Create a Folder named `Waypoints` in `workspace`.
 2) Add a few Parts inside it (spread them around).
-3) Replace the Script with `steps/01-random-walker.lua`.
-4) Replace `WALK_ANIM_ID`/`IDLE_ANIM_ID` as needed. Play to see wandering.
+3) **Important waypoint setup**: For each waypoint Part:
+   - Set `Anchored = true` (prevents them from falling)
+   - Set `CanCollide = false` (NPCs can walk through them)
+4) Replace the Script with `steps/01-random-walker.lua`.
+5) Replace `WALK_ANIM_ID`/`IDLE_ANIM_ID` as needed. Play to see wandering.
 
-Step C — Jumping (steps/02-walker-with-jump.lua)
+Step 3 — Jumping (steps/02-walker-with-jump.lua)
 1) Use `02-walker-with-jump.lua`.
 2) Optionally set `JUMP_ANIM_ID`.
 3) Ensure your paths require jumps (gaps/steps); the NPC will hop when near jump waypoints.
 
-Step D — Tracing (steps/03-visualize-waypoints.lua)
-1) Swap your Script to `steps/03-visualize-waypoints.lua` when you want to debug.
-2) It renders simple markers (and optional connecting lines/labels) for Parts under `workspace.Waypoints` so you can see targets and routes.
-3) Use this to tune speed/turn/stop distance or verify jump spots; remove or disable it for production.
+Step 4 — Tracing (debug visualization)
+1) Open `steps/03-visualize-waypoints.lua` and copy the entire `renderPathWaypoints` function.
+2) Paste it into your current script (after the `hop` function, before the `follow` function).
+3) Inside the `follow` function, add this line right after the `jumpUntil = 0` line:
+   ```lua
+   renderPathWaypoints(character, waypoints, goalPos)
+   ```
+4) This renders neon spheres and beams showing the pathfinding waypoints and routes.
+5) Use this to tune speed/turn/stop distance or verify jump spots.
+6) Remove the function and its call when you're done debugging.
 
 ## Upgrade path
 - Start with `script.lua` (idle)
 - Add walking via `steps/01-random-walker.lua`
 - Add jumping via `steps/02-walker-with-jump.lua`
-- Optional: enable tracing via `steps/03-visualize-waypoints.lua` while tuning
+- Optional: add tracing by copying the visualization function into your current script
 
 Keep the numbers small and iterate: speed, turn rate, stop distance, idle ranges.
