@@ -11,6 +11,7 @@ Tutorials
 - [3. Teleporter](video3/) — CFrame placement
 - [4. Spinning Platform](video4/) — tween loops
 - [5. Random Walker NPC](video5/) — pathfinding + animation
+- [6. Animated Melee Combo](video6/) — melee animations + combat polish
 
 Each folder includes
 - script.lua (complete working code)
