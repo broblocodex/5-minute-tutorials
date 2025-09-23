@@ -3,10 +3,10 @@
 Break feedback that scales: start with a health-aware crate, layer in texture wear, deform the mesh, and finish with a loot or FX payoff. You’ll ship with a flexible config that lets designers mix and match texture swaps, mesh swaps, or both.
 
 ## What you're building
-- Step 0: A crate that tracks health and reacts to hits (script.lua)
-- Step 1: Texture/SurfaceAppearance swaps driven by damage thresholds (steps/02)
-- Step 2: Mesh swaps so the silhouette dents and collapses (steps/03)
-- Step 3: Reward or effect spawn on full break (steps/04)
+- Step 1: A crate that tracks health and reacts to hits (script.lua)
+- Step 2: Texture/SurfaceAppearance swaps driven by damage thresholds (steps/02)
+- Step 3: Mesh swaps so the silhouette dents and collapses (steps/03)
+- Step 4: Reward or effect spawn on full break (steps/04)
 - Designer toggles baked into the final script so you can choose texture, mesh, or hybrid visuals per instance
 
 ## What's in here
