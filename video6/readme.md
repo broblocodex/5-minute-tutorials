@@ -30,10 +30,8 @@ Turn your avatar into a fighter. Start with a single kick that plays on key pres
 1. Insert a LocalScript under `StarterPlayerScripts` and paste `script.lua`
 2. Replace `KICK_ANIM_ID` with your animation id
 3. Press **F** in Play mode — your character should fire the kick animation
-4. Ready for hit detection? Swap the script with `steps/02-contact-moment.lua`
-5. When the console logs `Contact window active`, move to Step 03 and paste both client/server sections
-6. Plug in the extra animations and ids for Step 04 to unlock the combo
-7. Finish with Step 05 when you want cooldowns, impact sounds, and knockback
+4. Ready for hit detection? Swap the script with `steps/01-contact-moment.lua`
+5. Make sure you have console log when hit objects
 
 ## Upgrade path
 - **Step 01 → 02**: add a welded hitbox and limit hits to the `Hit` marker window

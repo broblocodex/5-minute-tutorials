@@ -100,6 +100,47 @@ local function closeContactWindow()
         if heartbeatConn then heartbeatConn:Disconnect(); heartbeatConn = nil end
 end
 
+local function createImpactEffect(position)
+        local anchor = Instance.new("Part")
+        anchor.Size = Vector3.new(0.1, 0.1, 0.1)
+        anchor.Transparency = 1
+        anchor.CanCollide = false
+        anchor.Anchored = true
+        anchor.CFrame = CFrame.new(position)
+        anchor.Parent = workspace
+        
+        local gui = Instance.new("BillboardGui")
+        gui.Size = UDim2.new(2, 0, 2, 0)
+        gui.StudsOffset = Vector3.new(0, 2, 0)
+        gui.Adornee = anchor
+        gui.Parent = workspace
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Font = Enum.Font.FredokaOne
+        label.TextSize = 48
+        label.TextColor3 = Color3.new(1, 1, 0)
+        label.TextStrokeTransparency = 0
+        label.TextStrokeColor3 = Color3.new(0, 0, 0)
+        label.Text = "BAM!"
+        label.Parent = gui
+        
+        local tween = game:GetService("TweenService"):Create(gui, TweenInfo.new(0.8, Enum.EasingStyle.Back), {
+                StudsOffset = Vector3.new(0, 4, 0)
+        })
+        local fadeTween = game:GetService("TweenService"):Create(label, TweenInfo.new(0.8), {
+                TextTransparency = 1,
+                TextStrokeTransparency = 1
+        })
+        
+        tween:Play()
+        fadeTween:Play()
+        
+        game:GetService("Debris"):AddItem(anchor, 1)
+        game:GetService("Debris"):AddItem(gui, 1)
+end
+
 -- Send hit information to server for damage processing
 local function reportHit(targetHumanoid)
         if not remote or not currentSwingId then return end
@@ -122,6 +163,7 @@ local function checkForTargets()
                         local targetHumanoid = model:FindFirstChildOfClass("Humanoid")
                         if targetHumanoid and hitTargetsThisSwing and not hitTargetsThisSwing[targetHumanoid] then
                                 hitTargetsThisSwing[targetHumanoid] = true
+                                createImpactEffect(hitboxPart.Position)
                                 reportHit(targetHumanoid) -- Report hit to server for damage processing
                         end
                 end
