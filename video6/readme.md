@@ -30,13 +30,11 @@ Turn your avatar into a fighter. Start with a single kick that plays on key pres
 1. Insert a LocalScript under `StarterPlayerScripts` and paste `script.lua`
 2. Replace `KICK_ANIM_ID` with your animation id
 3. Press **F** in Play mode — your character should fire the kick animation
-4. Ready for hit detection? Swap the script with `steps/01-contact-moment.lua`
-5. Make sure you have console log when hit objects
 
 ## Upgrade path
-- **Step 01 → 02**: add a welded hitbox and limit hits to the `Hit` marker window
-- **Step 02 → 03**: introduce a RemoteEvent so the server owns damage
-- **Step 03 → 04**: define multiple moves (right/left kick + punch) with shared networking
-- **Step 04 → 05**: layer in cooldowns, knockback impulses, and sound effects
+- **Step 01**: add a welded hitbox and limit hits to the `Hit` marker window
+- **Step 01 → 02**: introduce a RemoteEvent so the server owns damage
+- **Step 02 → 03**: define multiple moves (right/left kick + punch) with shared networking
+- **Step 03 → 04**: layer in cooldowns, knockback impulses, and sound effects
 
 Keep tweaking animation speed, contact windows, and knockback strength until it feels right for your game.
