@@ -1,7 +1,7 @@
--- Step 04 - Combo Variety
+-- Step 03 - Combo Variety
 -- LocalScript goes in StarterPlayerScripts, ServerScript in ServerScriptService.
 -- Prerequisite: Upload/own additional animations (left kick, punch) with "Hit" markers.
--- Changes from Step 03:
+-- Changes from Step 02:
 --   * Promoted the single kick into a combo table with chaining rules and expiry timing.
 --   * Added per-move animation loading, contact markers, and hitbox sizing/offset data.
 --   * Sent detailed move payloads to the server so each attack can deal unique damage.
@@ -17,36 +17,27 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
-local character: Model? = nil
-local humanoid: Humanoid? = nil
-local animator: Animator? = nil
-
-local activeMove = nil
-local activeTrack: AnimationTrack? = nil
-local heartbeatConn: RBXScriptConnection? = nil
-
-local hitboxPart: BasePart? = nil
-local hitboxWeld: Weld? = nil
-local hitTargetsThisSwing: {[Humanoid]: boolean}? = nil
+local character, humanoid, animator
+local activeMove, activeTrack, heartbeatConn -- Track currently executing move
+local hitboxPart, hitboxWeld, hitTargetsThisSwing
 local contactWindowEnd = 0
-local comboStep = 0
-local comboExpireAt = 0
-local currentSwingId: string? = nil
-
-local remote: RemoteEvent? = ReplicatedStorage:WaitForChild("MeleeStrike")
+local comboStep, comboExpireAt = 0, 0 -- Combo progression and timing
+local currentSwingId
+local remote = ReplicatedStorage:WaitForChild("MeleeStrike")
 
 local CONFIG = {
         INPUT_ACTION = "ComboMelee",
         INPUT_KEY = Enum.KeyCode.F,
         PLAYBACK_SPEED = 1,
-        COMBO_RESET = 0.7, -- seconds before combo resets to the first move
+        COMBO_RESET = 0.7, -- Time before combo resets to first move
         DEFAULT_MARKER = "Hit",
 }
 
+-- Array of combo moves with individual configurations
 local MOVES = {
         {
                 id = "RightKick",
-                animationId = "rbxassetid://RIGHT_KICK_ANIMATION_ID", -- replace with your right kick asset
+                animationId = "rbxassetid://RIGHT_KICK_ANIMATION_ID",
                 limb = "RightFoot",
                 offset = CFrame.new(0, -0.2, -1),
                 size = Vector3.new(2.6, 2.4, 3),
@@ -55,7 +46,7 @@ local MOVES = {
         },
         {
                 id = "LeftKick",
-                animationId = "rbxassetid://LEFT_KICK_ANIMATION_ID", -- replace with your left kick asset
+                animationId = "rbxassetid://LEFT_KICK_ANIMATION_ID",
                 limb = "LeftFoot",
                 offset = CFrame.new(0, -0.2, -1),
                 size = Vector3.new(2.6, 2.4, 3),
@@ -64,7 +55,7 @@ local MOVES = {
         },
         {
                 id = "StraightPunch",
-                animationId = "rbxassetid://PUNCH_ANIMATION_ID", -- replace with your punch asset
+                animationId = "rbxassetid://PUNCH_ANIMATION_ID",
                 limb = "RightHand",
                 offset = CFrame.new(0, -0.1, -1.1),
                 size = Vector3.new(2.4, 2.2, 2.6),
@@ -73,54 +64,36 @@ local MOVES = {
         },
 }
 
-local moveRuntime: {[string]: {track: AnimationTrack?, markerConn: RBXScriptConnection?}} = {}
+local moveRuntime = {} -- Runtime data for each move (animations and marker connections)
 
 local overlapParams = OverlapParams.new()
 overlapParams.FilterType = Enum.RaycastFilterType.Exclude
 
-type MoveDef = typeof(MOVES[1])
-
-local function safeLoadAnimation(anim: Animator, id: string, looped: boolean?)
-        if not anim or not id or id == "" then
-                return nil
-        end
-
+local function safeLoadAnimation(anim, id, looped)
+        if not anim or not id or id == "" then return nil end
+        
         local animation = Instance.new("Animation")
         animation.AnimationId = id
-
-        local ok, track = pcall(function()
-                return anim:LoadAnimation(animation)
-        end)
-
+        local ok, track = pcall(anim.LoadAnimation, anim, animation)
         animation:Destroy()
-
+        
         if ok and track then
-                track.Looped = (looped == true)
+                track.Looped = looped or false
                 return track
         end
-
         warn("[Melee] Failed to load animation", id)
-        return nil
 end
 
 local function teardownHitbox()
-        if heartbeatConn then
-                heartbeatConn:Disconnect()
-                heartbeatConn = nil
-        end
-        if hitboxWeld then
-                hitboxWeld:Destroy()
-                hitboxWeld = nil
-        end
-        if hitboxPart then
-                hitboxPart:Destroy()
-                hitboxPart = nil
-        end
+        if heartbeatConn then heartbeatConn:Disconnect(); heartbeatConn = nil end
+        if hitboxWeld then hitboxWeld:Destroy(); hitboxWeld = nil end
+        if hitboxPart then hitboxPart:Destroy(); hitboxPart = nil end
 end
 
-local function ensureHitbox(move: MoveDef)
+-- Create hitbox sized and positioned for specific move
+local function ensureHitbox(move)
         if not character then return end
-        local limb = character:FindFirstChild(move.limb) :: BasePart?
+        local limb = character:FindFirstChild(move.limb)
         if not limb then
                 warn(string.format("[Melee] Limb '%s' missing for hitbox attachment", move.limb))
                 return
@@ -148,22 +121,17 @@ local function ensureHitbox(move: MoveDef)
 
         hitboxPart = part
         hitboxWeld = weld
-
         overlapParams.FilterDescendantsInstances = { character }
 end
 
 local function closeContactWindow()
         contactWindowEnd = 0
-        if heartbeatConn then
-                heartbeatConn:Disconnect()
-                heartbeatConn = nil
-        end
+        if heartbeatConn then heartbeatConn:Disconnect(); heartbeatConn = nil end
 end
 
-local function reportHit(move: MoveDef, targetHumanoid: Humanoid)
-        if not remote or not currentSwingId then
-                return
-        end
+-- Send move-specific hit data to server
+local function reportHit(move, targetHumanoid)
+        if not remote or not currentSwingId then return end
 
         remote:FireServer({
                 swing = currentSwingId,
@@ -173,61 +141,50 @@ local function reportHit(move: MoveDef, targetHumanoid: Humanoid)
         })
 end
 
-local function checkForTargets(move: MoveDef)
-        if not hitboxPart then
-                return
-        end
+-- Check for targets using move-specific hitbox
+local function checkForTargets(move)
+        if not hitboxPart then return end
 
         local parts = workspace:GetPartBoundsInBox(hitboxPart.CFrame, hitboxPart.Size, overlapParams)
         for _, part in ipairs(parts) do
                 local model = part:FindFirstAncestorOfClass("Model")
                 if model and model ~= character then
                         local targetHumanoid = model:FindFirstChildOfClass("Humanoid")
-                        if targetHumanoid then
-                                if hitTargetsThisSwing and not hitTargetsThisSwing[targetHumanoid] then
-                                        hitTargetsThisSwing[targetHumanoid] = true
-                                        reportHit(move, targetHumanoid)
-                                end
+                        if targetHumanoid and hitTargetsThisSwing and not hitTargetsThisSwing[targetHumanoid] then
+                                hitTargetsThisSwing[targetHumanoid] = true
+                                reportHit(move, targetHumanoid)
                         end
                 end
         end
 end
 
-local function openContactWindow(move: MoveDef)
-        if activeMove ~= move then
-                return
-        end
+-- Open contact window for specific move with timing validation
+local function openContactWindow(move)
+        if activeMove ~= move then return end
 
         hitTargetsThisSwing = {}
         contactWindowEnd = os.clock() + (move.contactWindow or 0.2)
-
-        if heartbeatConn then
-                heartbeatConn:Disconnect()
-                heartbeatConn = nil
-        end
-
+        
+        if heartbeatConn then heartbeatConn:Disconnect(); heartbeatConn = nil end
+        
         heartbeatConn = RunService.Heartbeat:Connect(function()
                 if os.clock() > contactWindowEnd then
                         closeContactWindow()
                         return
                 end
-
                 checkForTargets(move)
         end)
 end
 
+-- Load all move animations and connect their marker events
 local function loadMoves()
         if not animator then return end
 
         for _, move in ipairs(MOVES) do
                 local runtime = moveRuntime[move.id]
                 if runtime then
-                        if runtime.markerConn then
-                                runtime.markerConn:Disconnect()
-                        end
-                        if runtime.track then
-                                runtime.track:Destroy()
-                        end
+                        if runtime.markerConn then runtime.markerConn:Disconnect() end
+                        if runtime.track then runtime.track:Destroy() end
                 end
                 moveRuntime[move.id] = {track = nil, markerConn = nil}
 
@@ -249,7 +206,8 @@ local function loadMoves()
         end
 end
 
-local function startMove(move: MoveDef)
+-- Execute specific move with proper setup and tracking
+local function startMove(move)
         local runtime = moveRuntime[move.id]
         if not runtime or not runtime.track then
                 warn("[Melee] Missing animation for move", move.id)
@@ -267,11 +225,8 @@ local function startMove(move: MoveDef)
         activeTrack:Play(0.1, 1, CONFIG.PLAYBACK_SPEED)
 end
 
-local function onAction(actionName: string, inputState: Enum.UserInputState)
-        if actionName ~= CONFIG.INPUT_ACTION then
-                return Enum.ContextActionResult.Pass
-        end
-        if inputState ~= Enum.UserInputState.Begin then
+local function onAction(actionName, inputState)
+        if actionName ~= CONFIG.INPUT_ACTION or inputState ~= Enum.UserInputState.Begin then
                 return Enum.ContextActionResult.Pass
         end
 
@@ -279,22 +234,18 @@ local function onAction(actionName: string, inputState: Enum.UserInputState)
         if now > comboExpireAt then
                 comboStep = 1
         else
-                comboStep += 1
-                if comboStep > #MOVES then
-                        comboStep = 1
-                end
+                comboStep += 1 -- Advance to next move in sequence
+                if comboStep > #MOVES then comboStep = 1 end
         end
         comboExpireAt = now + CONFIG.COMBO_RESET
 
         local move = MOVES[comboStep]
-        if move then
-                startMove(move)
-        end
+        if move then startMove(move) end
 
         return Enum.ContextActionResult.Sink
 end
 
-local function configureForCharacter(newCharacter: Model)
+local function configureForCharacter(newCharacter)
         character = newCharacter
         humanoid = character:WaitForChild("Humanoid")
         animator = humanoid:WaitForChild("Animator")
@@ -309,23 +260,10 @@ local function configureForCharacter(newCharacter: Model)
         loadMoves()
 end
 
-local function bind()
-        ContextActionService:UnbindAction(CONFIG.INPUT_ACTION)
-        ContextActionService:BindActionAtPriority(
-                CONFIG.INPUT_ACTION,
-                onAction,
-                false,
-                2000,
-                CONFIG.INPUT_KEY
-        )
-end
+ContextActionService:BindActionAtPriority(CONFIG.INPUT_ACTION, onAction, false, 2000, CONFIG.INPUT_KEY)
 
 player.CharacterAdded:Connect(configureForCharacter)
-if player.Character then
-        configureForCharacter(player.Character)
-end
-
-bind()
+if player.Character then configureForCharacter(player.Character) end
 
 ---------------------------------------------------------------------
 -- ServerScript: move-aware damage output
@@ -333,10 +271,8 @@ bind()
 local Players = game:GetService("Players")
 local ReplicatedStorageServer = game:GetService("ReplicatedStorage")
 
-type Player = Players.Player
-
 local REMOTE_NAME = "MeleeStrike"
-local remoteServer: RemoteEvent
+local remoteServer
 
 local existing = ReplicatedStorageServer:FindFirstChild(REMOTE_NAME)
 if existing and existing:IsA("RemoteEvent") then
@@ -347,22 +283,20 @@ else
         remoteServer.Parent = ReplicatedStorageServer
 end
 
+-- Per-move damage and distance configuration
 local MOVE_CONFIG = {
         RightKick = {damage = 25, maxDistance = 12},
         LeftKick = {damage = 25, maxDistance = 12},
         StraightPunch = {damage = 18, maxDistance = 10},
 }
 
-local recentSwings: {[Player]: {[string]: {[Humanoid]: boolean}}} = {}
+local recentSwings = {}
 
-local function validateTarget(targetHumanoid: Humanoid)
-        return targetHumanoid
-                and targetHumanoid.Health > 0
-                and targetHumanoid.Parent
-                and targetHumanoid.Parent:IsA("Model")
+local function validateTarget(targetHumanoid)
+        return targetHumanoid and targetHumanoid.Health > 0 and targetHumanoid.Parent and targetHumanoid.Parent:IsA("Model")
 end
 
-local function ensureSwingTable(player: Player, swingId: string)
+local function ensureSwingTable(player, swingId)
         local swings = recentSwings[player]
         if not swings then
                 swings = {}
@@ -376,63 +310,41 @@ local function ensureSwingTable(player: Player, swingId: string)
         return swing
 end
 
-remoteServer.OnServerEvent:Connect(function(attacker: Player, payload)
-        if typeof(payload) ~= "table" then
-                return
-        end
+remoteServer.OnServerEvent:Connect(function(attacker, payload)
+        if typeof(payload) ~= "table" then return end
 
         local swingId = payload.swing
         local moveId = payload.move
         local targetHumanoid = payload.target
         local hitPosition = payload.hitPosition
 
-        if typeof(swingId) ~= "string" or swingId == "" then
-                return
-        end
-        if typeof(moveId) ~= "string" or moveId == "" then
-                return
-        end
-        if typeof(targetHumanoid) ~= "Instance" or not targetHumanoid:IsA("Humanoid") then
-                return
-        end
+        if typeof(swingId) ~= "string" or swingId == "" then return end
+        if typeof(moveId) ~= "string" or moveId == "" then return end
+        if typeof(targetHumanoid) ~= "Instance" or not targetHumanoid:IsA("Humanoid") then return end
 
+        -- Validate move exists in configuration
         local moveConfig = MOVE_CONFIG[moveId]
-        if not moveConfig then
-                return
-        end
+        if not moveConfig then return end
 
         local character = attacker.Character
         if not character then return end
         local attackerHumanoid = character:FindFirstChildOfClass("Humanoid")
-        if not attackerHumanoid or attackerHumanoid.Health <= 0 then
-                return
-        end
-        if targetHumanoid == attackerHumanoid then
-                return
-        end
+        if not attackerHumanoid or attackerHumanoid.Health <= 0 then return end
+        if targetHumanoid == attackerHumanoid then return end
 
         local attackerRoot = character:FindFirstChild("HumanoidRootPart")
         local targetModel = targetHumanoid.Parent
         local targetRoot = targetModel and targetModel:FindFirstChild("HumanoidRootPart")
-        if not attackerRoot or not targetRoot then
-                return
-        end
+        if not attackerRoot or not targetRoot then return end
 
-        if (attackerRoot.Position - targetRoot.Position).Magnitude > (moveConfig.maxDistance or 12) then
-                return
-        end
-
-        if not validateTarget(targetHumanoid) then
-                return
-        end
+        if (attackerRoot.Position - targetRoot.Position).Magnitude > (moveConfig.maxDistance or 12) then return end
+        if not validateTarget(targetHumanoid) then return end
 
         local swingHits = ensureSwingTable(attacker, swingId)
-        if swingHits[targetHumanoid] then
-                return
-        end
+        if swingHits[targetHumanoid] then return end -- Already damaged this target
         swingHits[targetHumanoid] = true
 
-        targetHumanoid:TakeDamage(moveConfig.damage or 20)
+        targetHumanoid:TakeDamage(moveConfig.damage or 20) -- Apply move-specific damage
 
         if hitPosition and typeof(hitPosition) == "Vector3" then
                 print(string.format("[Melee] %s landed %s on %s", attacker.Name, moveId, targetHumanoid.Parent.Name))
