@@ -61,16 +61,3 @@ Time to steal some ideas. You've got an animated melee combo system — now let'
   3. Attach your own `SoundId` and `ParticleEmitter` assets to the `impactEffect` helper for satisfying audiovisual feedback.
   4. Enable camera shake by leaving `CONFIG.CAMERA_SHAKE` true so opponents clearly see when a heavy hit lands.
   5. Add animated impact effects like flying "BAM!" text or explosion clouds that spawn at hit locations using BillboardGui or ParticleEmitter for comic book-style feedback.
-
----
-
-## Expansion Ideas
-- **Weapon Swap System**
-  1. Create accessory-specific hitboxes and call `setHitboxProfile("Sword")` before each swing to swap sizes and offsets.
-  2. Store profile data in `ReplicatedStorage` so both the client and server agree on the active weapon stats.
-- **Combo Finisher Rewards**
-  1. Listen to the exposed `onComboFinished` event and award a RemoteEvent-driven ultimate ability when players land the full chain.
-  2. Increase the `SERVER_CONFIG.FINISHER_DAMAGE` or trigger a cinematic camera shot when that event fires.
-- **Stat-Driven Cooldowns**
-  1. Tie `CONFIG.COOLDOWN_SECONDS` to player data by reading a leaderstat or profile module each time `beginCombo()` is called.
-  2. Mirror the same calculation on the server validator to keep cooldown logic authoritative.
