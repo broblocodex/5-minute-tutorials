@@ -195,6 +195,7 @@ local function crackSideStrong(part: MeshPart, editableMesh, axis: string, sign:
 		:format(moved, S, axis, sign))
 end
 
+-- Step 02: Listen for deformation events from server
 deformEvent.OnClientEvent:Connect(function(cratePart, axis, sign, seed, crackStrength)
 	if not (cratePart and cratePart:IsA("MeshPart")) then return end
 	if type(axis) ~= "string" or type(sign) ~= "number" or type(seed) ~= "number" then return end

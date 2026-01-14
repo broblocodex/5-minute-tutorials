@@ -62,6 +62,7 @@ local function getNextSkinName(): string
 	return name
 end
 
+-- Step 01: Apply a skin to the crate by cloning from ReplicatedStorage
 local function applySkinByName(skinName: string)
 	if skinName == "" then return end
 
@@ -86,7 +87,7 @@ local function applySkinByName(skinName: string)
 	dprint("Applied skin:", skinName)
 end
 
---// Init (ensure we start with *some* SurfaceAppearance)
+-- Step 01: Initialize crate with first valid skin if none exists
 do
 	local existing = crate:FindFirstChildOfClass("SurfaceAppearance")
 	if not existing then
@@ -175,7 +176,7 @@ local function onMouseClick(_player: Player)
 	impactSound:Play()
 	task.spawn(shakeCrate)
 	
-	-- Cycle to next skin and apply it
+	-- Step 01: Cycle to next skin and apply it
 	local skinName = getNextSkinName()
 	applySkinByName(skinName)
 end

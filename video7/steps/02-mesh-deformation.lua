@@ -183,7 +183,7 @@ local function onMouseClick(_player: Player)
 	local skinName = getNextSkinName()
 	applySkinByName(skinName)
 	
-	-- Tell all clients to apply a crack on a random side.
+	-- Step 02: Fire RemoteEvent to all clients with deformation parameters
 	local seed = math.random(1, 2^30)
 	local axes = {"X", "Y", "Z"}
 	local axis = axes[math.random(1, 3)]

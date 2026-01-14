@@ -30,7 +30,7 @@ local CONFIG = {
 	CRACK_STRENGTH_MAX = 2.0,
 	UI_DISPLAY_TIME = 3,
 	UI_FADE_TIME = 0.5,
-	-- Break + chunks
+	-- Step 04: Break and chunk settings
 	BREAK_SOUND_ID = "rbxassetid://BREAK_SOUND_ID",
 	CHUNK_COUNT = 5,
 	CHUNK_SIZE_MIN = 0.4,
@@ -222,6 +222,7 @@ healthBar.BorderSizePixel = 0
 healthBar.Parent = frame
 
 local hitCount = 0
+-- Step 04: Track break state separately
 local isBroken = false
 crate:SetAttribute("HitCount", hitCount)
 crate:SetAttribute("MaxHits", CONFIG.MAX_HITS)
@@ -273,7 +274,7 @@ local function getCrackStrength(): number
 	return CONFIG.CRACK_STRENGTH_MIN + (CONFIG.CRACK_STRENGTH_MAX - CONFIG.CRACK_STRENGTH_MIN) * (1 - ratio)
 end
 
---// Break (spawn chunks)
+-- Step 04: Spawn procedural chunks with physics
 local function spawnChunks()
 	local cratePos = crate.Position
 	local crateSize = crate.Size
@@ -339,7 +340,7 @@ local function spawnChunks()
 	dprint(string.format("Spawned %d procedural chunks", CONFIG.CHUNK_COUNT))
 end
 
--- Hides the original crate and cleans it up after a short delay.
+-- Step 04: Break the crate with sound and visual effects
 local function breakCrate()
 	if isBroken then return end
 	isBroken = true
@@ -384,7 +385,7 @@ local function applyDamage()
 		billboard.Enabled = true
 		frame.BackgroundTransparency = 0
 		healthBar.BackgroundTransparency = 0
-		-- Trigger break sequence
+		-- Step 04: Trigger break sequence
 		breakCrate()
 		return true
 	end
