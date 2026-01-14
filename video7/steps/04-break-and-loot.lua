@@ -2,14 +2,17 @@
 -- What: Crate breaks into flying chunks after 3 hits with break sound.
 -- Why: Complete destruction loop - hit → damage → break into pieces.
 
+-- Where: Put this Script inside the crate MeshPart.
+
 local crate = script.Parent
 assert(crate and crate:IsA("MeshPart"), "Script must be inside a MeshPart (the crate).")
 
+--// Services
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
--- Step 04: Add Debris service for chunk cleanup
 local Debris = game:GetService("Debris")
 
+--// Config
 local CONFIG = {
 	IMPACT_SOUND_ID = "rbxassetid://YOUR_IMPACT_SOUND_ID",
 	COOLDOWN        = 0.2,
@@ -27,7 +30,7 @@ local CONFIG = {
 	CRACK_STRENGTH_MAX = 2.0,
 	UI_DISPLAY_TIME = 3,
 	UI_FADE_TIME = 0.5,
-	-- Step 04: Break and chunk settings
+	-- Break + chunks
 	BREAK_SOUND_ID = "rbxassetid://BREAK_SOUND_ID",
 	CHUNK_COUNT = 5,
 	CHUNK_SIZE_MIN = 0.4,
@@ -37,9 +40,12 @@ local CONFIG = {
 	CHUNK_IMPULSE = 25,
 }
 
-local lastHitTime = 0
+--// State
+local lastClickAt = 0
 local isShaking = false
-local currentSkinIndex = 2
+
+-- Start at 2 so the first click applies Skin2 (assuming Skin1 is the initial/default skin).
+local nextSkinIndex = 2
 
 local function dprint(...)
 	if CONFIG.DEBUG then
@@ -47,6 +53,7 @@ local function dprint(...)
 	end
 end
 
+--// Networking
 local deformEvent = ReplicatedStorage:FindFirstChild("CrateDeform")
 if not deformEvent then
 	deformEvent = Instance.new("RemoteEvent")
@@ -55,6 +62,7 @@ if not deformEvent then
 	dprint("Created RemoteEvent: CrateDeform")
 end
 
+--// Preconditions
 local skinsFolder = ReplicatedStorage:FindFirstChild("CrateSkins")
 assert(
 	skinsFolder and skinsFolder:IsA("Folder"),
@@ -67,10 +75,10 @@ local function getNextSkinName(): string
 		return ""
 	end
 
-	local name = CONFIG.SKIN_NAMES[currentSkinIndex]
-	currentSkinIndex += 1
-	if currentSkinIndex > #CONFIG.SKIN_NAMES then
-		currentSkinIndex = 1
+	local name = CONFIG.SKIN_NAMES[nextSkinIndex]
+	nextSkinIndex += 1
+	if nextSkinIndex > #CONFIG.SKIN_NAMES then
+		nextSkinIndex = 1
 	end
 
 	return name
@@ -117,6 +125,7 @@ do
 	end
 end
 
+--// Feedback (shake)
 local function shakeCrate()
 	if isShaking then return end
 	isShaking = true
@@ -159,6 +168,7 @@ local function shakeCrate()
 	isShaking = false
 end
 
+--// Feedback (sound)
 local impactSound = crate:FindFirstChild("ImpactSound") :: Sound
 if not impactSound then
 	impactSound = Instance.new("Sound")
@@ -169,13 +179,15 @@ impactSound.SoundId = CONFIG.IMPACT_SOUND_ID
 impactSound.Volume = 0.8
 impactSound.RollOffMaxDistance = 50
 
--- Step 04: Create break sound
-local breakSound = Instance.new("Sound")
-breakSound.Name = "BreakSound"
+local breakSound = crate:FindFirstChild("BreakSound") :: Sound
+if not breakSound then
+	breakSound = Instance.new("Sound")
+	breakSound.Name = "BreakSound"
+	breakSound.Parent = crate
+end
 breakSound.SoundId = CONFIG.BREAK_SOUND_ID
 breakSound.Volume = 1.0
 breakSound.RollOffMaxDistance = 80
-breakSound.Parent = crate
 
 local clickDetector = crate:FindFirstChildOfClass("ClickDetector")
 if not clickDetector then
@@ -184,6 +196,7 @@ if not clickDetector then
 end
 clickDetector.MaxActivationDistance = CONFIG.MAX_DISTANCE
 
+--// UI (world-space health bar)
 local billboard = crate:FindFirstChild("DamageIndicator") or Instance.new("BillboardGui")
 billboard.Name = "DamageIndicator"
 billboard.Size = UDim2.new(6, 0, 1.5, 0)
@@ -209,7 +222,6 @@ healthBar.BorderSizePixel = 0
 healthBar.Parent = frame
 
 local hitCount = 0
--- Step 04: Track break state separately
 local isBroken = false
 crate:SetAttribute("HitCount", hitCount)
 crate:SetAttribute("MaxHits", CONFIG.MAX_HITS)
@@ -261,7 +273,7 @@ local function getCrackStrength(): number
 	return CONFIG.CRACK_STRENGTH_MIN + (CONFIG.CRACK_STRENGTH_MAX - CONFIG.CRACK_STRENGTH_MIN) * (1 - ratio)
 end
 
--- Step 04: Spawn procedural chunks with physics
+--// Break (spawn chunks)
 local function spawnChunks()
 	local cratePos = crate.Position
 	local crateSize = crate.Size
@@ -327,7 +339,7 @@ local function spawnChunks()
 	dprint(string.format("Spawned %d procedural chunks", CONFIG.CHUNK_COUNT))
 end
 
--- Step 04: Break the crate with sound and visual effects
+-- Hides the original crate and cleans it up after a short delay.
 local function breakCrate()
 	if isBroken then return end
 	isBroken = true
@@ -353,6 +365,7 @@ local function breakCrate()
 	end)
 end
 
+--// Damage
 local function applyDamage()
 	hitCount += 1
 	crate:SetAttribute("HitCount", hitCount)
@@ -371,7 +384,7 @@ local function applyDamage()
 		billboard.Enabled = true
 		frame.BackgroundTransparency = 0
 		healthBar.BackgroundTransparency = 0
-		-- Step 04: Trigger break sequence
+		-- Trigger break sequence
 		breakCrate()
 		return true
 	end
@@ -379,15 +392,16 @@ local function applyDamage()
 	return false
 end
 
-local function onMouseClick(player: Player)
+
+local function onMouseClick(_player: Player)
 	if isBroken then
 		dprint("Crate already broken, ignoring click")
 		return
 	end
 	
 	local now = tick()
-	if now - lastHitTime < CONFIG.COOLDOWN then return end
-	lastHitTime = now
+	if now - lastClickAt < CONFIG.COOLDOWN then return end
+	lastClickAt = now
 	
 	impactSound:Play()
 	task.spawn(shakeCrate)

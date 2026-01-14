@@ -2,12 +2,16 @@
 -- What: Adds integrity tracking; crate breaks after 3 hits. Crack strength scales with damage.
 -- Why: Creates progression where crate visibly degrades before breaking.
 
+-- Where: Put this Script inside the crate MeshPart.
+
 local crate = script.Parent
 assert(crate and crate:IsA("MeshPart"), "Script must be inside a MeshPart (the crate).")
 
+--// Services
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+--// Config
 local CONFIG = {
 	IMPACT_SOUND_ID = "rbxassetid://YOUR_IMPACT_SOUND_ID",
 	COOLDOWN        = 0.2,
@@ -20,7 +24,7 @@ local CONFIG = {
 	},
 	SKIN_NAMES = { "Skin1", "Skin2", "Skin3" },
 	DEBUG = true,
-	-- Step 03: Damage system configuration
+	-- Damage system
 	MAX_HITS = 3,
 	CRACK_STRENGTH_MIN = 0.8,
 	CRACK_STRENGTH_MAX = 2.0,
@@ -28,9 +32,12 @@ local CONFIG = {
 	UI_FADE_TIME = 0.5,
 }
 
-local lastHitTime = 0
+--// State
+local lastClickAt = 0
 local isShaking = false
-local currentSkinIndex = 2
+
+-- Start at 2 so the first click applies Skin2 (assuming Skin1 is the initial/default skin).
+local nextSkinIndex = 2
 
 local function dprint(...)
 	if CONFIG.DEBUG then
@@ -38,6 +45,7 @@ local function dprint(...)
 	end
 end
 
+--// Networking
 local deformEvent = ReplicatedStorage:FindFirstChild("CrateDeform")
 if not deformEvent then
 	deformEvent = Instance.new("RemoteEvent")
@@ -46,6 +54,7 @@ if not deformEvent then
 	dprint("Created RemoteEvent: CrateDeform")
 end
 
+--// Preconditions
 local skinsFolder = ReplicatedStorage:FindFirstChild("CrateSkins")
 assert(
 	skinsFolder and skinsFolder:IsA("Folder"),
@@ -58,10 +67,10 @@ local function getNextSkinName(): string
 		return ""
 	end
 
-	local name = CONFIG.SKIN_NAMES[currentSkinIndex]
-	currentSkinIndex += 1
-	if currentSkinIndex > #CONFIG.SKIN_NAMES then
-		currentSkinIndex = 1
+	local name = CONFIG.SKIN_NAMES[nextSkinIndex]
+	nextSkinIndex += 1
+	if nextSkinIndex > #CONFIG.SKIN_NAMES then
+		nextSkinIndex = 1
 	end
 
 	return name
@@ -108,6 +117,7 @@ do
 	end
 end
 
+--// Feedback (shake)
 local function shakeCrate()
 	if isShaking then return end
 	isShaking = true
@@ -150,6 +160,7 @@ local function shakeCrate()
 	isShaking = false
 end
 
+--// Feedback (sound)
 local impactSound = crate:FindFirstChild("ImpactSound") :: Sound
 if not impactSound then
 	impactSound = Instance.new("Sound")
@@ -160,6 +171,7 @@ impactSound.SoundId = CONFIG.IMPACT_SOUND_ID
 impactSound.Volume = 0.8
 impactSound.RollOffMaxDistance = 50
 
+--// Interaction
 local clickDetector = crate:FindFirstChildOfClass("ClickDetector")
 if not clickDetector then
 	clickDetector = Instance.new("ClickDetector")
@@ -167,7 +179,7 @@ if not clickDetector then
 end
 clickDetector.MaxActivationDistance = CONFIG.MAX_DISTANCE
 
--- Step 03: Create BillboardGui for health display
+--// UI (world-space health bar)
 local billboard = crate:FindFirstChild("DamageIndicator") or Instance.new("BillboardGui")
 billboard.Name = "DamageIndicator"
 billboard.Size = UDim2.new(6, 0, 1.5, 0)
@@ -192,7 +204,7 @@ healthBar.BackgroundColor3 = Color3.fromRGB(85, 255, 127)
 healthBar.BorderSizePixel = 0
 healthBar.Parent = frame
 
--- Step 03: Track damage state
+--// Damage state
 local hitCount = 0
 crate:SetAttribute("HitCount", hitCount)
 crate:SetAttribute("MaxHits", CONFIG.MAX_HITS)
@@ -200,7 +212,6 @@ crate:SetAttribute("IsBroken", false)
 
 local hideUITimer = nil
 
--- Step 03: Show/hide health UI with auto-fade
 local function showDamageUI()
 	billboard.Enabled = true
 	frame.BackgroundTransparency = 0
@@ -223,12 +234,11 @@ local function showDamageUI()
 	end)
 end
 
--- Step 03: Calculate integrity ratio (1.0 = full health, 0.0 = broken)
+-- 1.0 = full health, 0.0 = broken
 local function getIntegrityRatio(): number
 	return 1 - (hitCount / CONFIG.MAX_HITS)
 end
 
--- Step 03: Update health bar visual (size and color)
 local function updateDamageIndicator()
 	local ratio = getIntegrityRatio()
 	healthBar.Size = UDim2.new(ratio, 0, 1, 0)
@@ -242,13 +252,11 @@ local function updateDamageIndicator()
 	end
 end
 
--- Step 03: Calculate crack strength based on damage
 local function getCrackStrength(): number
 	local ratio = getIntegrityRatio()
 	return CONFIG.CRACK_STRENGTH_MIN + (CONFIG.CRACK_STRENGTH_MAX - CONFIG.CRACK_STRENGTH_MIN) * (1 - ratio)
 end
 
--- Step 03: Apply damage and update UI
 local function applyDamage()
 	hitCount += 1
 	crate:SetAttribute("HitCount", hitCount)
@@ -274,16 +282,16 @@ local function applyDamage()
 	return false
 end
 
-local function onMouseClick(player: Player)
-	-- Step 03: Check if crate is already broken
+local function onMouseClick(_player: Player)
+	-- Ignore clicks after the crate is marked broken.
 	if crate:GetAttribute("IsBroken") then
 		dprint("Crate already broken, ignoring click")
 		return
 	end
 	
 	local now = tick()
-	if now - lastHitTime < CONFIG.COOLDOWN then return end
-	lastHitTime = now
+	if now - lastClickAt < CONFIG.COOLDOWN then return end
+	lastClickAt = now
 	
 	impactSound:Play()
 	task.spawn(shakeCrate)
@@ -291,7 +299,7 @@ local function onMouseClick(player: Player)
 	local skinName = getNextSkinName()
 	applySkinByName(skinName)
 	
-	-- Step 03: Apply damage and check if broken
+	-- Apply damage and check if broken
 	local isBroken = applyDamage()
 	
 	if isBroken then
@@ -302,7 +310,7 @@ local function onMouseClick(player: Player)
 	local axes = {"X", "Y", "Z"}
 	local axis = axes[math.random(1, 3)]
 	local sign = (math.random() < 0.5) and -1 or 1
-	-- Step 03: Send scaled crack strength to clients
+	-- Send scaled crack strength to clients
 	local crackStrength = getCrackStrength()
 	
 	deformEvent:FireAllClients(crate, axis, sign, seed, crackStrength)

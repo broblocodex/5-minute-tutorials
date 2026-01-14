@@ -1,14 +1,15 @@
 -- Step 01 - Texture Modification (SurfaceAppearance Cycler)
--- What: Cycle through SurfaceAppearance skins on click, with shake and sound feedback.
--- Why: Server-authoritative texture swapping using pre-configured SurfaceAppearance templates.
+-- Goal: Click the crate to cycle SurfaceAppearance skins (server-authoritative), with shake + SFX.
+-- Where: Put this Script inside the crate MeshPart.
 
 local crate = script.Parent
 assert(crate and crate:IsA("MeshPart"), "Script must be inside a MeshPart (the crate).")
 
+--// Services
 local TweenService = game:GetService("TweenService")
--- Step 01: Add ReplicatedStorage for skin templates
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+--// Config
 local CONFIG = {
 	IMPACT_SOUND_ID = "rbxassetid://YOUR_IMPACT_SOUND_ID",
 	COOLDOWN        = 0.2,
@@ -19,47 +20,48 @@ local CONFIG = {
 		POS_MAG = 0.12,
 		ROT_MAG = 3,
 	},
-	-- Step 01: Define available skin names and debug mode
+	-- Names must match SurfaceAppearance instances in ReplicatedStorage/CrateSkins
 	SKIN_NAMES = { "Skin1", "Skin2", "Skin3" },
 	DEBUG = true,
 }
 
-local lastHitTime = 0
+--// State
+local lastClickAt = 0
 local isShaking = false
--- Step 01: Track current skin index for cycling
-local currentSkinIndex = 2
 
--- Step 01: Debug print helper
+-- Start at 2 so the *first click* applies Skin2 (assuming Skin1 is the initial/default skin).
+-- This keeps the click-cycle feeling like "next skin" rather than re-applying the current one.
+local nextSkinIndex = 2
+
 local function dprint(...)
 	if CONFIG.DEBUG then
 		print("[Crate]", ...)
 	end
 end
 
--- Step 01: Reference to skins folder in ReplicatedStorage
+--// Preconditions
 local skinsFolder = ReplicatedStorage:FindFirstChild("CrateSkins")
 assert(
 	skinsFolder and skinsFolder:IsA("Folder"),
 	"Create ReplicatedStorage/CrateSkins with SurfaceAppearance objects named Skin1, Skin2, Skin3"
 )
 
--- Step 01: Get the next skin name in rotation
+--// Skin helpers
 local function getNextSkinName(): string
 	if #CONFIG.SKIN_NAMES == 0 then
 		warn("[Crate] SKIN_NAMES is empty!")
 		return ""
 	end
 
-	local name = CONFIG.SKIN_NAMES[currentSkinIndex]
-	currentSkinIndex += 1
-	if currentSkinIndex > #CONFIG.SKIN_NAMES then
-		currentSkinIndex = 1
+	local name = CONFIG.SKIN_NAMES[nextSkinIndex]
+	nextSkinIndex += 1
+	if nextSkinIndex > #CONFIG.SKIN_NAMES then
+		nextSkinIndex = 1
 	end
 
 	return name
 end
 
--- Step 01: Apply a skin to the crate by cloning from ReplicatedStorage
 local function applySkinByName(skinName: string)
 	if skinName == "" then return end
 
@@ -84,7 +86,7 @@ local function applySkinByName(skinName: string)
 	dprint("Applied skin:", skinName)
 end
 
--- Step 01: Initialize crate with first valid skin if none exists
+--// Init (ensure we start with *some* SurfaceAppearance)
 do
 	local existing = crate:FindFirstChildOfClass("SurfaceAppearance")
 	if not existing then
@@ -102,6 +104,7 @@ do
 	end
 end
 
+--// Feedback (shake)
 local function shakeCrate()
 	if isShaking then return end
 	isShaking = true
@@ -144,6 +147,7 @@ local function shakeCrate()
 	isShaking = false
 end
 
+--// Feedback (sound)
 local impactSound = crate:FindFirstChild("ImpactSound") :: Sound
 if not impactSound then
 	impactSound = Instance.new("Sound")
@@ -154,6 +158,7 @@ impactSound.SoundId = CONFIG.IMPACT_SOUND_ID
 impactSound.Volume = 0.8
 impactSound.RollOffMaxDistance = 50
 
+--// Interaction
 local clickDetector = crate:FindFirstChildOfClass("ClickDetector")
 if not clickDetector then
 	clickDetector = Instance.new("ClickDetector")
@@ -161,15 +166,16 @@ if not clickDetector then
 end
 clickDetector.MaxActivationDistance = CONFIG.MAX_DISTANCE
 
-local function onMouseClick(player: Player)
+
+local function onMouseClick(_player: Player)
 	local now = tick()
-	if now - lastHitTime < CONFIG.COOLDOWN then return end
-	lastHitTime = now
+	if now - lastClickAt < CONFIG.COOLDOWN then return end
+	lastClickAt = now
 	
 	impactSound:Play()
 	task.spawn(shakeCrate)
 	
-	-- Step 01: Cycle to next skin and apply it
+	-- Cycle to next skin and apply it
 	local skinName = getNextSkinName()
 	applySkinByName(skinName)
 end

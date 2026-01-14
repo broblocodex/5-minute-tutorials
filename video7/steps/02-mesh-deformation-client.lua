@@ -6,16 +6,23 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local AssetService = game:GetService("AssetService")
 
-local Content = _G.Content
+-- Some experiences provide Content via _G for CreateMeshPartAsync conversion.
+-- Keep this flexible, but fail loudly with a helpful message if missing.
+local Content = _G.Content or Content
+assert(
+	Content and type(Content) == "table" and type(Content.fromObject) == "function",
+	"Missing Content.fromObject(). Ensure your environment provides Content (e.g., _G.Content) before using EditableMesh conversion."
+)
 
 local deformEvent = ReplicatedStorage:WaitForChild("CrateDeform")
 
--- Step 02: Tune crack intensity
+--// Tuning
 local CRACK_STRENGTH = 1.2
 
+--// Cache (one editable mesh per crate part)
 local editableByPart = {}
 
-local function getOrCreateEditable(part)
+local function getOrCreateEditable(part: MeshPart)
 	local entry = editableByPart[part]
 	if entry and entry.part == part and part.Parent then
 		return entry.editableMesh
@@ -34,7 +41,8 @@ local function getOrCreateEditable(part)
 	return editableMesh
 end
 
-local function applyEditableMesh(part, editableMesh)
+
+local function applyEditableMesh(part: MeshPart, editableMesh)
 	local temp = AssetService:CreateMeshPartAsync(Content.fromObject(editableMesh))
 	part:ApplyMesh(temp)
 	temp:Destroy()
@@ -58,8 +66,9 @@ local function clamp01(x)
 	return math.max(0, math.min(1, x))
 end
 
--- Step 02: Apply crack deformation with configurable strength
-local function crackSideStrong(part, editableMesh, axis, sign, seed, crackStrength)
+--// Deformation
+-- Applies a "crack" effect along one side of the mesh.
+local function crackSideStrong(part: MeshPart, editableMesh, axis: string, sign: number, seed: number, crackStrength: number?)
 	if not editableMesh then return end
 	math.randomseed(seed)
 
@@ -75,7 +84,7 @@ local function crackSideStrong(part, editableMesh, axis, sign, seed, crackStreng
 	local inwardMax = size * 0.02
 	local jagMax    = size * 0.02
 
-	-- Step 02: Apply global strength multiplier (can be overridden by server in later steps)
+	-- Global strength multiplier (can be overridden by server in later steps)
 	local S = (type(crackStrength) == "number") and crackStrength or CRACK_STRENGTH
 	bandOuter *= (0.8 + 0.2 * S)  -- don't scale too much or cracks become huge
 	bandInner *= (0.8 + 0.2 * S)
@@ -186,7 +195,6 @@ local function crackSideStrong(part, editableMesh, axis, sign, seed, crackStreng
 		:format(moved, S, axis, sign))
 end
 
--- Step 02: Listen for deformation events from server
 deformEvent.OnClientEvent:Connect(function(cratePart, axis, sign, seed, crackStrength)
 	if not (cratePart and cratePart:IsA("MeshPart")) then return end
 	if type(axis) ~= "string" or type(sign) ~= "number" or type(seed) ~= "number" then return end

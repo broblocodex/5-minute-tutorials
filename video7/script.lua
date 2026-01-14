@@ -2,13 +2,16 @@
 -- What: Detect mouse clicks on a crate and play an impact sound.
 -- Why: Verify click detection works before adding visual damage or deformation.
 
--- Crate reference
+-- Where: Put this Script inside the crate MeshPart.
+
+--// Crate
 local crate = script.Parent
 assert(crate and crate:IsA("MeshPart"), "Script must be inside a MeshPart (the crate).")
 
+--// Services
 local TweenService = game:GetService("TweenService")
 
--- Config
+--// Config
 local CONFIG = {
 	IMPACT_SOUND_ID = "rbxassetid://YOUR_IMPACT_SOUND_ID", -- Replace with your sound asset
 	COOLDOWN        = 0.2,                                  -- Min time between hits (s)
@@ -21,10 +24,11 @@ local CONFIG = {
 	},
 }
 
--- State
-local lastHitTime = 0
+--// State
+local lastClickAt = 0
 local isShaking = false
 
+--// Feedback (shake)
 local function shakeCrate()
 	if isShaking then return end
 	isShaking = true
@@ -67,7 +71,7 @@ local function shakeCrate()
 	isShaking = false
 end
 
--- Create/reuse sound
+--// Feedback (sound)
 local impactSound = crate:FindFirstChild("ImpactSound") :: Sound
 if not impactSound then
 	impactSound = Instance.new("Sound")
@@ -78,7 +82,7 @@ impactSound.SoundId = CONFIG.IMPACT_SOUND_ID
 impactSound.Volume = 0.8
 impactSound.RollOffMaxDistance = 50
 
--- Create/reuse ClickDetector for mouse interaction
+--// Interaction
 local clickDetector = crate:FindFirstChildOfClass("ClickDetector")
 if not clickDetector then
 	clickDetector = Instance.new("ClickDetector")
@@ -86,19 +90,15 @@ if not clickDetector then
 end
 clickDetector.MaxActivationDistance = CONFIG.MAX_DISTANCE
 
--- Hit handler
-local function onMouseClick(player: Player)
-	-- Cooldown check
+
+local function onMouseClick(_player: Player)
 	local now = tick()
-	if now - lastHitTime < CONFIG.COOLDOWN then return end
-	lastHitTime = now
+	if now - lastClickAt < CONFIG.COOLDOWN then return end
+	lastClickAt = now
 	
-	-- Play impact sound
 	impactSound:Play()
 	
-	-- Small shake feedback
 	task.spawn(shakeCrate)
 end
 
--- Connect click
 clickDetector.MouseClick:Connect(onMouseClick)

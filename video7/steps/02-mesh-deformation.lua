@@ -1,13 +1,15 @@
 -- Step 02 - Mesh Deformation (Client-Server Architecture)
--- What: Server handles clicks/skins/shake; client does crack deformation via RemoteEvent.
--- Why: Separates authority (server) from visual effects (client) for cleaner architecture.
+-- Goal: Server handles clicks/skins/shake; client performs mesh deformation via RemoteEvent.
+-- Where: Put this Script inside the crate MeshPart.
 
 local crate = script.Parent
 assert(crate and crate:IsA("MeshPart"), "Script must be inside a MeshPart (the crate).")
 
+--// Services
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+--// Config
 local CONFIG = {
 	IMPACT_SOUND_ID = "rbxassetid://YOUR_IMPACT_SOUND_ID",
 	COOLDOWN        = 0.2,
@@ -22,9 +24,12 @@ local CONFIG = {
 	DEBUG = true,
 }
 
-local lastHitTime = 0
+--// State
+local lastClickAt = 0
 local isShaking = false
-local currentSkinIndex = 2
+
+-- Start at 2 so the first click applies Skin2 (assuming Skin1 is the initial/default skin).
+local nextSkinIndex = 2
 
 local function dprint(...)
 	if CONFIG.DEBUG then
@@ -32,7 +37,8 @@ local function dprint(...)
 	end
 end
 
--- Step 02: Create RemoteEvent for client-side mesh deformation
+--// Networking
+-- Creates the RemoteEvent once in ReplicatedStorage. Clients listen for it (see client step).
 local deformEvent = ReplicatedStorage:FindFirstChild("CrateDeform")
 if not deformEvent then
 	deformEvent = Instance.new("RemoteEvent")
@@ -41,6 +47,7 @@ if not deformEvent then
 	dprint("Created RemoteEvent: CrateDeform")
 end
 
+--// Preconditions
 local skinsFolder = ReplicatedStorage:FindFirstChild("CrateSkins")
 assert(
 	skinsFolder and skinsFolder:IsA("Folder"),
@@ -53,10 +60,10 @@ local function getNextSkinName(): string
 		return ""
 	end
 
-	local name = CONFIG.SKIN_NAMES[currentSkinIndex]
-	currentSkinIndex += 1
-	if currentSkinIndex > #CONFIG.SKIN_NAMES then
-		currentSkinIndex = 1
+	local name = CONFIG.SKIN_NAMES[nextSkinIndex]
+	nextSkinIndex += 1
+	if nextSkinIndex > #CONFIG.SKIN_NAMES then
+		nextSkinIndex = 1
 	end
 
 	return name
@@ -103,6 +110,7 @@ do
 	end
 end
 
+--// Feedback (shake)
 local function shakeCrate()
 	if isShaking then return end
 	isShaking = true
@@ -145,6 +153,7 @@ local function shakeCrate()
 	isShaking = false
 end
 
+--// Feedback (sound)
 local impactSound = crate:FindFirstChild("ImpactSound") :: Sound
 if not impactSound then
 	impactSound = Instance.new("Sound")
@@ -155,6 +164,7 @@ impactSound.SoundId = CONFIG.IMPACT_SOUND_ID
 impactSound.Volume = 0.8
 impactSound.RollOffMaxDistance = 50
 
+--// Interaction
 local clickDetector = crate:FindFirstChildOfClass("ClickDetector")
 if not clickDetector then
 	clickDetector = Instance.new("ClickDetector")
@@ -162,10 +172,10 @@ if not clickDetector then
 end
 clickDetector.MaxActivationDistance = CONFIG.MAX_DISTANCE
 
-local function onMouseClick(player: Player)
+local function onMouseClick(_player: Player)
 	local now = tick()
-	if now - lastHitTime < CONFIG.COOLDOWN then return end
-	lastHitTime = now
+	if now - lastClickAt < CONFIG.COOLDOWN then return end
+	lastClickAt = now
 	
 	impactSound:Play()
 	task.spawn(shakeCrate)
@@ -173,7 +183,7 @@ local function onMouseClick(player: Player)
 	local skinName = getNextSkinName()
 	applySkinByName(skinName)
 	
-	-- Step 02: Fire RemoteEvent to all clients with deformation parameters
+	-- Tell all clients to apply a crack on a random side.
 	local seed = math.random(1, 2^30)
 	local axes = {"X", "Y", "Z"}
 	local axis = axes[math.random(1, 3)]
