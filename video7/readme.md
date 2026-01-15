@@ -23,7 +23,7 @@ Build a sealed crate that reacts to hits, deforms visually, tracks damage, and b
 
 ### Required Assets
 1. **MeshPart for the crate**
-   - Must be a low-poly mesh (8–100 vertices recommended)
+   - Must be a low-poly mesh (aim for under ~1,000 vertices; lower is easier to read and deform)
    - **You must own the mesh** to use EditableMesh (Steps 2-4)
    - Simple cube or box shape works best for learning
    

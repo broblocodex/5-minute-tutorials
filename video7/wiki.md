@@ -51,7 +51,7 @@ What you'll actually use:
 
 ## Tips
 - EditableMesh requires you to own the source mesh asset.
-- Keep crate vertex count low (8–64) for readable, performant deformation.
+- Keep crate vertex count low (aim for under ~1,000 vertices; lower is better for readable, performant deformation).
 - Cache vertex positions at start; recalculate only changed verts.
 - Clamp max dent depth to prevent mesh inversion/z-fighting.
 - Use falloff curves (linear, smooth, exponential) for natural-looking dents.
